@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { listProjects } from "@/lib/services";
+import { ProjectService } from "@/lib/services/projectService";
 
 export async function GET() {
-  const projects = listProjects();
+  const projects = ProjectService.listProjects();
   return NextResponse.json(projects);
 }

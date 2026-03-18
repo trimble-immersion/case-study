@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { listChangeOrders } from "@/lib/services";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { StatusBadge } from "@/components/domain/StatusBadge";
 
 export default function ChangeOrdersListPage() {
-  const changeOrders = listChangeOrders();
+  const changeOrders = ChangeOrderService.listChangeOrders();
 
   return (
     <div className="flex flex-col gap-4 p-4">

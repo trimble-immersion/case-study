@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { listConnections } from "@/lib/services";
+import { IntegrationService } from "@/lib/services/integrationService";
 
 export async function GET() {
-  const connections = listConnections();
+  const connections = IntegrationService.listConnections();
   return NextResponse.json(connections);
 }

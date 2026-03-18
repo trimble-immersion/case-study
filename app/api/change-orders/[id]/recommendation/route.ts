@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
-import {
-  getCurrentRecommendation,
-  generateAndStoreRecommendation,
-} from "@/lib/services/pricingRecommendationService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { PricingRecommendationService } from "@/lib/services/pricingRecommendationService";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
+  const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  let rec = getCurrentRecommendation(id);
+
+  let rec = PricingRecommendationService.getCurrentRecommendation(id);
   if (!rec) {
-    const result = generateAndStoreRecommendation({
+    const result = PricingRecommendationService.generateAndStoreRecommendation({
       changeOrderId: id,
       projectId: co.projectId,
       laborHours: co.laborHours,

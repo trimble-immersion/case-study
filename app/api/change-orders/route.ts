@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  listChangeOrders,
-  createChangeOrder,
-  generateAndStoreRecommendation,
-  recordActivity,
-} from "@/lib/services";
-import type { ScopeItem } from "@/lib/domain/types";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { PricingRecommendationService } from "@/lib/services/pricingRecommendationService";
+import type { ChangeOrderLineItem } from "@/lib/domain/types";
 
 export async function GET(request: NextRequest) {
   const projectId = request.nextUrl.searchParams.get("projectId") ?? undefined;
-  const list = listChangeOrders(projectId);
+  const list = ChangeOrderService.listChangeOrders(projectId);
   return NextResponse.json(list);
 }
 
@@ -27,6 +23,7 @@ export async function POST(request: NextRequest) {
       subcontractorTotal,
       costCode,
     } = body;
+
     if (
       !projectId ||
       !title ||
@@ -40,16 +37,20 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const scopeItems: ScopeItem[] = [
+
+    const lineItems: ChangeOrderLineItem[] = [
       {
-        id: `s-${Date.now()}-1`,
+        id: `li-${Date.now()}-1`,
         changeOrderId: "",
-        description: body.description,
+        sequence: 1,
+        description,
         category: "Labor",
+        createdAt: new Date().toISOString(),
       },
     ];
-    const { recommendation } = generateAndStoreRecommendation({
-      changeOrderId: "", // set after create
+
+    const { recommendation } = PricingRecommendationService.generateAndStoreRecommendation({
+      changeOrderId: "",
       projectId,
       laborHours,
       materialTotal,
@@ -57,8 +58,10 @@ export async function POST(request: NextRequest) {
       subcontractorTotal: subcontractorTotal ?? 0,
       scopeSummary: description,
       costCode,
+      requestedBy: requester,
     });
-    const co = createChangeOrder(
+
+    const co = ChangeOrderService.createChangeOrder(
       {
         projectId,
         title,
@@ -69,14 +72,16 @@ export async function POST(request: NextRequest) {
         equipmentTotal,
         subcontractorTotal,
         costCode,
+        createdBy: requester,
       },
-      scopeItems,
+      lineItems,
       recommendation.recommendedTotal
     );
-    co.scopeItems.forEach((s) => (s.changeOrderId = co.id));
+
+    // Fix up FK and link the recommendation generated before co.id existed
+    co.scopeItems?.forEach((s) => { s.changeOrderId = co.id; });
     co.currentRecommendationId = recommendation.id;
-    recordActivity(co.id, "Created", "Change order created", undefined, requester);
-    recordActivity(co.id, "PricingGenerated", "Pricing recommendation generated");
+
     return NextResponse.json(co);
   } catch (e) {
     return NextResponse.json(

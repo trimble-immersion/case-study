@@ -1,75 +1,137 @@
 /**
- * Approval workflow service – submit, approve, reject; record steps.
+ * ApprovalWorkflowService – manages approval state transitions.
+ * Delegates persistence to ApprovalRepository and ChangeOrderRepository.
+ * Emits domain events on approval/rejection.
  */
 
-import type { ApprovalStatus, ApprovalStep, ApprovalSubmitDto } from "@/lib/domain/types";
-import { changeOrderStore, approvalStepStore, ensureSeeded, generateId } from "@/lib/data/store";
+import type { ApprovalStep, ApprovalSubmitDto } from "@/lib/domain/types";
+import { ChangeOrderRepository } from "@/lib/repositories/changeOrderRepository";
+import { ApprovalRepository } from "@/lib/repositories/approvalRepository";
+import { AuditRepository } from "@/lib/repositories/auditRepository";
+import { EventBus } from "@/lib/events/eventBus";
+import type { ApprovalPayload } from "@/lib/events/eventTypes";
 
-export function getApprovalSteps(changeOrderId: string): ApprovalStep[] {
-  ensureSeeded();
-  return approvalStepStore
-    .filter((s) => s.changeOrderId === changeOrderId)
-    .sort((a, b) => a.sequence - b.sequence);
-}
+export const ApprovalWorkflowService = {
+  getApprovalSteps(changeOrderId: string): ApprovalStep[] {
+    return ApprovalRepository.findByChangeOrderId(changeOrderId);
+  },
 
-export function submitForApproval(changeOrderId: string): boolean {
-  ensureSeeded();
-  const idx = changeOrderStore.findIndex((c) => c.id === changeOrderId);
-  if (idx === -1) return false;
-  changeOrderStore[idx].status = "Pending Approval";
-  changeOrderStore[idx].dateSubmitted = new Date().toISOString();
-  changeOrderStore[idx].updatedAt = new Date().toISOString();
-  const nextSeq = approvalStepStore.filter((s) => s.changeOrderId === changeOrderId).length + 1;
-  approvalStepStore.push({
-    id: generateId("ap"),
-    changeOrderId,
-    sequence: nextSeq,
-    status: "Pending Approval",
-  });
-  return true;
-}
+  submitForApproval(changeOrderId: string): boolean {
+    const co = ChangeOrderRepository.findById(changeOrderId);
+    if (!co) return false;
 
-export function approve(dto: ApprovalSubmitDto): boolean {
-  ensureSeeded();
-  const idx = changeOrderStore.findIndex((c) => c.id === dto.changeOrderId);
-  if (idx === -1) return false;
-  changeOrderStore[idx].status = "Approved";
-  changeOrderStore[idx].finalTotal = dto.finalTotal;
-  changeOrderStore[idx].updatedAt = new Date().toISOString();
-  const steps = approvalStepStore.filter((s) => s.changeOrderId === dto.changeOrderId);
-  const last = steps[steps.length - 1];
-  if (last) {
-    last.status = "Approved";
-    last.approvedBy = dto.approvedBy;
-    last.approvedAt = new Date().toISOString();
-    last.comment = dto.comment;
-  } else {
-    approvalStepStore.push({
-      id: generateId("ap"),
-      changeOrderId: dto.changeOrderId,
-      sequence: 1,
+    ChangeOrderRepository.update(changeOrderId, {
+      status: "Pending Approval",
+      dateSubmitted: new Date().toISOString(),
+    });
+
+    const nextSeq = ApprovalRepository.countByChangeOrderId(changeOrderId) + 1;
+    ApprovalRepository.insert({
+      changeOrderId,
+      sequence: nextSeq,
+      status: "Pending Approval",
+    });
+
+    AuditRepository.append(changeOrderId, "Submitted", "Submitted for approval", {
+      userName: co.requester,
+    });
+
+    EventBus.publish("SubmittedForApproval", changeOrderId, "ChangeOrder", {
+      changeOrderId,
+    });
+
+    return true;
+  },
+
+  approve(dto: ApprovalSubmitDto): boolean {
+    const co = ChangeOrderRepository.findById(dto.changeOrderId);
+    if (!co) return false;
+
+    ChangeOrderRepository.update(dto.changeOrderId, {
       status: "Approved",
+      finalTotal: dto.finalTotal,
+    });
+
+    const currentStep = ApprovalRepository.findCurrentStep(dto.changeOrderId);
+    if (currentStep) {
+      ApprovalRepository.updateStep(currentStep.id, {
+        status: "Approved",
+        approvedBy: dto.approvedBy,
+        approvedAt: new Date().toISOString(),
+        comment: dto.comment,
+      });
+    } else {
+      ApprovalRepository.insert({
+        changeOrderId: dto.changeOrderId,
+        sequence: 1,
+        status: "Approved",
+        approvedBy: dto.approvedBy,
+        approvedAt: new Date().toISOString(),
+        comment: dto.comment,
+      });
+    }
+
+    AuditRepository.append(
+      dto.changeOrderId,
+      "Approved",
+      `Approved by ${dto.approvedBy}`,
+      { userName: dto.approvedBy }
+    );
+
+    EventBus.publish<ApprovalPayload>("Approved", dto.changeOrderId, "ChangeOrder", {
+      changeOrderId: dto.changeOrderId,
       approvedBy: dto.approvedBy,
-      approvedAt: new Date().toISOString(),
+      finalTotal: dto.finalTotal,
       comment: dto.comment,
     });
-  }
-  return true;
-}
 
-export function reject(changeOrderId: string, rejectedBy: string, comment?: string): boolean {
-  ensureSeeded();
-  const idx = changeOrderStore.findIndex((c) => c.id === changeOrderId);
-  if (idx === -1) return false;
-  changeOrderStore[idx].status = "Rejected";
-  changeOrderStore[idx].updatedAt = new Date().toISOString();
-  const steps = approvalStepStore.filter((s) => s.changeOrderId === changeOrderId);
-  const last = steps[steps.length - 1];
-  if (last) {
-    last.status = "Rejected";
-    last.approvedBy = rejectedBy;
-    last.approvedAt = new Date().toISOString();
-    last.comment = comment;
-  }
-  return true;
+    return true;
+  },
+
+  reject(changeOrderId: string, rejectedBy: string, comment?: string): boolean {
+    if (!ChangeOrderRepository.exists(changeOrderId)) return false;
+
+    ChangeOrderRepository.update(changeOrderId, { status: "Rejected" });
+
+    const currentStep = ApprovalRepository.findCurrentStep(changeOrderId);
+    if (currentStep) {
+      ApprovalRepository.updateStep(currentStep.id, {
+        status: "Rejected",
+        approvedBy: rejectedBy,
+        approvedAt: new Date().toISOString(),
+        comment,
+      });
+    }
+
+    AuditRepository.append(changeOrderId, "Rejected", `Rejected by ${rejectedBy}`, {
+      userName: rejectedBy,
+    });
+
+    EventBus.publish("Rejected", changeOrderId, "ChangeOrder", {
+      changeOrderId,
+      rejectedBy,
+      comment,
+    });
+
+    return true;
+  },
+};
+
+// ─── Free function aliases for backward compatibility ──────────────────────
+
+export function getApprovalSteps(changeOrderId: string): ApprovalStep[] {
+  return ApprovalWorkflowService.getApprovalSteps(changeOrderId);
+}
+export function submitForApproval(changeOrderId: string): boolean {
+  return ApprovalWorkflowService.submitForApproval(changeOrderId);
+}
+export function approve(dto: ApprovalSubmitDto): boolean {
+  return ApprovalWorkflowService.approve(dto);
+}
+export function reject(
+  changeOrderId: string,
+  rejectedBy: string,
+  comment?: string
+): boolean {
+  return ApprovalWorkflowService.reject(changeOrderId, rejectedBy, comment);
 }

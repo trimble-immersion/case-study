@@ -1,8 +1,5 @@
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
-import {
-  getCurrentRecommendation,
-  generateAndStoreRecommendation,
-} from "@/lib/services/pricingRecommendationService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { PricingRecommendationService } from "@/lib/services/pricingRecommendationService";
 import { DataPanel } from "@/components/domain/DataPanel";
 import { CostBreakdownTable } from "@/components/domain/CostBreakdownTable";
 import { ConfidenceBadge } from "@/components/domain/ConfidenceBadge";
@@ -14,11 +11,11 @@ export default async function PricingPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
+  const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
-  let rec = getCurrentRecommendation(id);
+  let rec = PricingRecommendationService.getCurrentRecommendation(id);
   if (!rec) {
-    const result = generateAndStoreRecommendation({
+    const result = PricingRecommendationService.generateAndStoreRecommendation({
       changeOrderId: id,
       projectId: co.projectId,
       laborHours: co.laborHours,

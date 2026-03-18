@@ -1,5 +1,5 @@
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
-import { getProjectById } from "@/lib/services/projectService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { ProjectService } from "@/lib/services/projectService";
 import { DataPanel } from "@/components/domain/DataPanel";
 
 export default async function ChangeOrderOverviewPage({
@@ -8,8 +8,8 @@ export default async function ChangeOrderOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
-  const project = co ? getProjectById(co.projectId) : null;
+  const co = ChangeOrderService.getChangeOrderById(id);
+  const project = co ? ProjectService.getProjectById(co.projectId) : null;
   if (!co) return null;
 
   return (

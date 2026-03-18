@@ -1,12 +1,26 @@
+/**
+ * ProjectService – project record access.
+ * Delegates to ProjectRepository.
+ */
+
 import type { Project } from "@/lib/domain/types";
-import { projectStore, ensureSeeded } from "@/lib/data/store";
+import { ProjectRepository } from "@/lib/repositories/projectRepository";
+
+export const ProjectService = {
+  listProjects(): Project[] {
+    return ProjectRepository.findAll();
+  },
+
+  getProjectById(id: string): Project | undefined {
+    return ProjectRepository.findById(id);
+  },
+};
+
+// ─── Free function aliases for backward compatibility ──────────────────────
 
 export function listProjects(): Project[] {
-  ensureSeeded();
-  return [...projectStore];
+  return ProjectService.listProjects();
 }
-
 export function getProjectById(id: string): Project | undefined {
-  ensureSeeded();
-  return projectStore.find((p) => p.id === id);
+  return ProjectService.getProjectById(id);
 }

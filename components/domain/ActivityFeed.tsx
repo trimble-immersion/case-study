@@ -1,8 +1,8 @@
 "use client";
 
-import type { ActivityEvent } from "@/lib/domain/types";
+import type { AuditRecord } from "@/lib/domain/types";
 
-export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
+export function ActivityFeed({ events }: { events: AuditRecord[] }) {
   if (events.length === 0) {
     return <p className="text-sm text-gray-500">No activity yet.</p>;
   }
@@ -16,7 +16,7 @@ export function ActivityFeed({ events }: { events: ActivityEvent[] }) {
           <span className="shrink-0 text-xs text-gray-400">
             {new Date(e.timestamp).toLocaleString()}
           </span>
-          <span className="text-xs font-medium text-gray-500">{e.type}</span>
+          <span className="text-xs font-medium text-gray-500">{e.eventType}</span>
           <span className="text-sm text-gray-700">{e.description}</span>
           {e.userName && (
             <span className="text-xs text-gray-400">— {e.userName}</span>

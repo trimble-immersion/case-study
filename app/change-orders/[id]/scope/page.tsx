@@ -1,4 +1,4 @@
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { DataPanel } from "@/components/domain/DataPanel";
 
 export default async function ScopePage({
@@ -7,7 +7,7 @@ export default async function ScopePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
+  const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
 
   return (

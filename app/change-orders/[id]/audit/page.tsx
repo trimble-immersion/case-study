@@ -1,5 +1,5 @@
 import { getChangeOrderById } from "@/lib/services/changeOrderService";
-import { getActivityByChangeOrderId } from "@/lib/services/auditService";
+import { AuditService } from "@/lib/services/auditService";
 import { DataPanel } from "@/components/domain/DataPanel";
 import { ActivityFeed } from "@/components/domain/ActivityFeed";
 
@@ -11,7 +11,7 @@ export default async function AuditPage({
   const { id } = await params;
   const co = getChangeOrderById(id);
   if (!co) return null;
-  const activity = getActivityByChangeOrderId(id);
+  const activity = AuditService.getAuditTrail(id);
 
   return (
     <div className="space-y-4">

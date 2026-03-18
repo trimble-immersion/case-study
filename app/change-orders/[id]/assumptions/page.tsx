@@ -1,5 +1,5 @@
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
-import { getCurrentRecommendation } from "@/lib/services/pricingRecommendationService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { PricingRecommendationService } from "@/lib/services/pricingRecommendationService";
 import { DataPanel } from "@/components/domain/DataPanel";
 import { AssumptionsPanel } from "@/components/domain/AssumptionsPanel";
 
@@ -9,9 +9,9 @@ export default async function AssumptionsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
+  const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
-  const rec = getCurrentRecommendation(id);
+  const rec = PricingRecommendationService.getCurrentRecommendation(id);
 
   return (
     <div className="space-y-4">

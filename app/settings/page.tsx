@@ -1,8 +1,8 @@
-import { listConnections } from "@/lib/services";
+import { IntegrationService } from "@/lib/services/integrationService";
 import { DataPanel } from "@/components/domain/DataPanel";
 
 export default function SettingsPage() {
-  const connections = listConnections();
+  const connections = IntegrationService.listConnections();
 
   return (
     <div className="flex flex-col gap-4 p-4">

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { listChangeOrders, listProjects } from "@/lib/services";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { ProjectService } from "@/lib/services/projectService";
 import { StatusBadge } from "@/components/domain/StatusBadge";
 import { DataPanel } from "@/components/domain/DataPanel";
 
 export default function DashboardPage() {
-  const projects = listProjects();
-  const changeOrders = listChangeOrders();
+  const projects = ProjectService.listProjects();
+  const changeOrders = ChangeOrderService.listChangeOrders();
   const pending = changeOrders.filter(
     (c) =>
       c.status === "Draft" ||

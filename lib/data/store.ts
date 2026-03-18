@@ -7,7 +7,7 @@ import type {
   ChangeOrder,
   PricingRecommendation,
   ApprovalStep,
-  ActivityEvent,
+  AuditRecord,
   IntegrationConnection,
 } from "@/lib/domain/types";
 import {
@@ -23,7 +23,7 @@ export const projectStore: Project[] = [];
 export const changeOrderStore: ChangeOrder[] = [];
 export const recommendationStore: PricingRecommendation[] = [];
 export const approvalStepStore: ApprovalStep[] = [];
-export const activityStore: ActivityEvent[] = [];
+export const activityStore: AuditRecord[] = [];
 export const integrationStore: IntegrationConnection[] = [];
 
 let seeded = false;
@@ -32,7 +32,7 @@ export function ensureSeeded(): void {
   if (seeded) return;
   seeded = true;
   projectStore.push(...mockProjects.map((p) => ({ ...p })));
-  changeOrderStore.push(...mockChangeOrders.map((c) => ({ ...c, scopeItems: c.scopeItems.map((s) => ({ ...s })) })));
+  changeOrderStore.push(...mockChangeOrders.map((c) => ({ ...c })));
   recommendationStore.push(...mockRecommendations.map((r) => ({ ...r })));
   approvalStepStore.push(...mockApprovalSteps.map((a) => ({ ...a })));
   activityStore.push(...mockActivityEvents.map((e) => ({ ...e })));

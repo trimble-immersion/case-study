@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { listChangeOrders } from "@/lib/services";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { StatusBadge } from "@/components/domain/StatusBadge";
 
 export default function FinancePage() {
-  const all = listChangeOrders();
+  const all = ChangeOrderService.listChangeOrders();
   const approved = all.filter((c) => c.status === "Approved");
   const totalImpact = approved.reduce((s, c) => s + c.finalTotal, 0);
 

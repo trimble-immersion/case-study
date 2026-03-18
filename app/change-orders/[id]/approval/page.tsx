@@ -1,5 +1,5 @@
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
-import { getApprovalSteps } from "@/lib/services/approvalWorkflowService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
+import { ApprovalWorkflowService } from "@/lib/services/approvalWorkflowService";
 import { DataPanel } from "@/components/domain/DataPanel";
 import { ApprovalForm } from "./ApprovalForm";
 
@@ -9,9 +9,9 @@ export default async function ApprovalPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
+  const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
-  const steps = getApprovalSteps(id);
+  const steps = ApprovalWorkflowService.getApprovalSteps(id);
 
   return (
     <div className="space-y-4">

@@ -1,36 +1,47 @@
 /**
- * Audit service – activity feed, history, who changed what.
+ * AuditService – append-only audit trail.
+ * Delegates to AuditRepository; wraps ActivityEvent alias for backward compat.
  */
 
-import type { ActivityEvent } from "@/lib/domain/types";
-import { activityStore, ensureSeeded, generateId } from "@/lib/data/store";
+import type { ActivityEvent, AuditEventType, AuditRecord } from "@/lib/domain/types";
+import { AuditRepository } from "@/lib/repositories/auditRepository";
+
+export const AuditService = {
+  getAuditTrail(changeOrderId: string): AuditRecord[] {
+    return AuditRepository.findByChangeOrderId(changeOrderId);
+  },
+
+  recordEvent(
+    changeOrderId: string,
+    eventType: AuditEventType,
+    description: string,
+    options?: { userId?: string; userName?: string; payload?: Record<string, unknown> }
+  ): AuditRecord {
+    return AuditRepository.append(changeOrderId, eventType, description, options);
+  },
+};
+
+// ─── Free function aliases for backward compatibility ──────────────────────
 
 export function getActivityByChangeOrderId(changeOrderId: string): ActivityEvent[] {
-  ensureSeeded();
-  return activityStore
-    .filter((e) => e.changeOrderId === changeOrderId)
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return AuditRepository.findByChangeOrderId(changeOrderId).map((r) => ({
+    ...r,
+    type: r.eventType,
+  }));
 }
 
 export function recordActivity(
   changeOrderId: string,
-  type: ActivityEvent["type"],
+  type: AuditEventType,
   description: string,
   userId?: string,
   userName?: string,
   payload?: Record<string, unknown>
 ): ActivityEvent {
-  ensureSeeded();
-  const event: ActivityEvent = {
-    id: generateId("ev"),
-    changeOrderId,
-    type,
-    timestamp: new Date().toISOString(),
-    description,
+  const record = AuditRepository.append(changeOrderId, type, description, {
     userId,
     userName,
     payload,
-  };
-  activityStore.push(event);
-  return event;
+  });
+  return { ...record, type: record.eventType };
 }
