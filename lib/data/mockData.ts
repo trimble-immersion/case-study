@@ -280,7 +280,7 @@ export const mockIntegrations: IntegrationConnection[] = [
   {
     id: "int-1",
     system: "ERP",
-    displayName: "Trimble Financials",
+    displayName: "Corestone Financials",
     connected: true,
     lastSync: "2024-02-10T06:00:00Z",
   },

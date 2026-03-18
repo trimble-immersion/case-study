@@ -28,10 +28,10 @@ export function TopBar() {
           }}
         >
           <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#93C5FD" }}>
-            TRIMBLE
+            CORESTONE
           </span>
           <span style={{ fontSize: 10, color: "var(--nav-text-muted)", marginTop: 1 }}>
-            Construction Suite
+            Systems Inc.
           </span>
         </div>
 
@@ -46,7 +46,7 @@ export function TopBar() {
           }}
         >
           <span style={{ fontSize: 12, fontWeight: 600, color: "var(--nav-text)" }}>
-            Change Order Pricing
+            Corestone CMS — Change Order Pricing
           </span>
           <span style={{ fontSize: 10, color: "var(--nav-text-muted)", marginLeft: 8 }}>
             v3.2.1
@@ -96,7 +96,7 @@ export function TopBar() {
       <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 12px" }}>
         <span style={{ fontSize: 10, color: "var(--nav-text-muted)" }}>ENV: PROD-US-EAST</span>
         <span style={{ fontSize: 10, color: "var(--nav-text-muted)" }}>DB: TRIMBLE-SQL-02</span>
-        <span style={{ fontSize: 11, color: "var(--nav-text)" }}>zara.hall@contractor.trimble.com</span>
+        <span style={{ fontSize: 11, color: "var(--nav-text)" }}>zara.hall@contractor.corestone.com</span>
         <div
           title="Connected"
           style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ADE80", border: "1px solid #16A34A" }}

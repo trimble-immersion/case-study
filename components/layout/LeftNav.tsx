@@ -17,16 +17,16 @@ const navGroups = [
     group: "INTEGRATIONS",
     items: [
       { href: "/settings", label: "System Connections" },
-      { href: "/settings", label: "ERP Sync Status", warn: true },
+      { href: "/erp-sync", label: "ERP Sync Status", warn: true },
       { href: "/settings", label: "Document Control" },
     ],
   },
   {
     group: "CONFIGURATION",
     items: [
-      { href: "/settings", label: "Cost Code Table" },
-      { href: "/settings", label: "Labor Rate Table" },
-      { href: "/settings", label: "Project Registry" },
+      { href: "/cost-codes", label: "Cost Code Table" },
+      { href: "/labor-rates", label: "Labor Rate Table" },
+      { href: "/projects", label: "Project Registry" },
       { href: "/settings", label: "User Permissions" },
     ],
   },

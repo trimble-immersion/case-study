@@ -3,8 +3,8 @@ import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "CO Pricing | Trimble Construction Suite",
-  description: "Change Order Pricing Module – Trimble Construction Suite",
+  title: "CO Pricing | Corestone CMS",
+  description: "Change Order Pricing Module – Corestone Construction Management System",
 };
 
 export default function RootLayout({

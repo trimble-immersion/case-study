@@ -1,11 +1,11 @@
 /**
- * ERP adapter – maps internal ChangeOrder model to Trimble Financials / Vista / Spectrum format.
+ * ERP adapter – maps internal ChangeOrder model to Corestone Financials / Vista / Spectrum format.
  * In production: POST to ERP REST API or trigger Service Bus message.
  */
 
 import type { ChangeOrder, Project } from "@/lib/domain/types";
 
-/** ERP-side ChangeOrder contract (Trimble Financials / Vista format) */
+/** ERP-side ChangeOrder contract (Corestone Financials / Vista format) */
 export interface ErpChangeOrderPayload {
   ExternalId: string;               // Our changeOrderNumber
   ProjectCode: string;              // ERP project reference

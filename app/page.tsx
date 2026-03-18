@@ -209,7 +209,7 @@ export default function DashboardPage() {
       {/* Status bar */}
       <div className="status-bar">
         <span>CO Pricing Module v3.2.1</span>
-        <span>Server: TRIMBLE-APP-01</span>
+        <span>Server: CORESTONE-APP-01</span>
         <span>DB: Connected</span>
         <span style={{ color: "var(--warning-text)", fontWeight: 600 }}>Estimating MEP: OFFLINE</span>
         <span style={{ marginLeft: "auto" }}>Session: {new Date().toLocaleString()}</span>

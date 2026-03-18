@@ -1,7 +1,7 @@
 export default function SettingsPage() {
   const integrations = [
     { name: "Oracle ERP / JDE",          status: "ONLINE",   lastSync: "06:00 UTC",   record: "PROD-ERP-01",      note: "Posting enabled" },
-    { name: "Trimble ProjectSight",       status: "ONLINE",   lastSync: "06:00 UTC",   record: "PS-TENANT-02",     note: "Read-write" },
+    { name: "Corestone ProjectSight",      status: "ONLINE",   lastSync: "06:00 UTC",   record: "PS-TENANT-02",     note: "Read-write" },
     { name: "Estimation MEP",             status: "OFFLINE",  lastSync: "Yesterday",   record: "—",                note: "Connection failed — manual entry required" },
     { name: "Document Control (Newforma)", status: "ONLINE",  lastSync: "05:30 UTC",   record: "NEWFORMA-01",      note: "Read-only" },
     { name: "Kafka / Service Bus",        status: "ONLINE",   lastSync: "—",           record: "sb-prod-eastus",   note: "Event publishing active" },
