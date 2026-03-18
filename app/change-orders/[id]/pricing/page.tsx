@@ -28,7 +28,7 @@ export default function PricingPage({ params }: { params: { id: string } }) {
         <button className="btn-toolbar">Export Estimate</button>
         {rec && (
           <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>
-            Generated: {new Date(rec.generatedAt).toLocaleString()} ·{" "}
+            Generated: {new Date(rec.createdAt).toLocaleString()} ·{" "}
             <ConfidenceBadge confidence={rec.confidence} />
           </span>
         )}
@@ -42,7 +42,7 @@ export default function PricingPage({ params }: { params: { id: string } }) {
           <div className="panel-body">
             <p style={{ fontSize: 12, color: "var(--warning-text)", margin: 0 }}>
               No AI pricing estimate has been generated for this change order. Click{" "}
-              <strong>"Generate Pricing"</strong> to run the pricing engine. Verify scope and line items
+              <strong>&quot;Generate Pricing&quot;</strong> to run the pricing engine. Verify scope and line items
               before generating. Manual override is available after generation.
             </p>
           </div>
@@ -58,24 +58,24 @@ export default function PricingPage({ params }: { params: { id: string } }) {
                   <tr>
                     <th style={{ width: 180 }}>Total Estimated Value</th>
                     <td style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 16 }}>
-                      ${rec.totalCost.toFixed(2)}
+                      ${rec.recommendedTotal.toFixed(2)}
                     </td>
                     <th style={{ width: 180 }}>Confidence Level</th>
                     <td><ConfidenceBadge confidence={rec.confidence} /></td>
                   </tr>
                   <tr>
                     <th>Budget Impact</th>
-                    <td className={rec.impactOnBudget > 0 ? "warn-cell" : ""}>
-                      {rec.impactOnBudget > 0 ? `+$${rec.impactOnBudget.toFixed(2)}` : "—"}
+                    <td className={rec.budgetImpact > 0 ? "warn-cell" : ""}>
+                      {rec.budgetImpact > 0 ? `+$${rec.budgetImpact.toFixed(2)}` : "—"}
                     </td>
                     <th>Revenue Impact</th>
-                    <td>{rec.impactOnRevenue > 0 ? `+$${rec.impactOnRevenue.toFixed(2)}` : "—"}</td>
+                    <td>{rec.revenueImpact > 0 ? `+$${rec.revenueImpact.toFixed(2)}` : "—"}</td>
                   </tr>
                   <tr>
                     <th>Schedule Impact</th>
-                    <td>{rec.impactOnSchedule ?? "Not assessed"}</td>
+                    <td>{rec.scheduleImpactDays != null ? `${rec.scheduleImpactDays} days` : "Not assessed"}</td>
                     <th>Generated At</th>
-                    <td style={{ color: "var(--text-secondary)" }}>{new Date(rec.generatedAt).toLocaleString()}</td>
+                    <td style={{ color: "var(--text-secondary)" }}>{new Date(rec.createdAt).toLocaleString()}</td>
                   </tr>
                   <tr>
                     <th>Rationale</th>
@@ -90,7 +90,7 @@ export default function PricingPage({ params }: { params: { id: string } }) {
           <div className="panel">
             <div className="panel-header">COST BREAKDOWN — By Category</div>
             <div style={{ padding: 0 }}>
-              <CostBreakdownTable breakdown={rec.breakdown} />
+              <CostBreakdownTable breakdown={rec.costBreakdown} />
             </div>
           </div>
 

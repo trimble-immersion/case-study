@@ -55,36 +55,41 @@ export default function AssumptionsPage({ params }: { params: { id: string } }) 
             </div>
           </div>
 
-          {/* Historical references */}
+          {/* Evidence / comparable records */}
           <div className="panel">
-            <div className="panel-header">HISTORICAL REFERENCES — Comparable Records</div>
+            <div className="panel-header">EVIDENCE — Comparable Records &amp; References</div>
             <div style={{ padding: 0 }}>
-              {rec.historicalReferences.length === 0 ? (
-                <div style={{ padding: 8, fontSize: 12, color: "var(--text-secondary)" }}>No comparable records found.</div>
+              {rec.evidence.length === 0 ? (
+                <div style={{ padding: 8, fontSize: 12, color: "var(--text-secondary)" }}>
+                  No comparable records found.
+                </div>
               ) : (
                 <table>
                   <thead>
                     <tr>
-                      <th>CO Reference</th>
-                      <th>Description</th>
-                      <th style={{ textAlign: "right" }}>Amount ($)</th>
+                      <th>Type</th>
+                      <th>Reference</th>
+                      <th style={{ textAlign: "right" }}>Value ($)</th>
                       <th>Delta vs. Estimate</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rec.historicalReferences.map((r, i) => {
-                      const delta = rec.totalCost - r.amount;
+                    {rec.evidence.map((e) => {
+                      const delta = e.value != null ? rec.recommendedTotal - e.value : null;
                       return (
-                        <tr key={i}>
-                          <td style={{ fontWeight: 600, color: "var(--blue)" }}>{r.changeOrderId}</td>
-                          <td>{r.description}</td>
-                          <td style={{ textAlign: "right" }}>{r.amount.toFixed(2)}</td>
+                        <tr key={e.id}>
+                          <td style={{ fontWeight: 500 }}>{e.type}</td>
+                          <td style={{ color: "var(--blue)" }}>{e.reference}</td>
+                          <td style={{ textAlign: "right" }}>
+                            {e.value != null ? e.value.toFixed(2) : "—"}
+                          </td>
                           <td
-                            className={Math.abs(delta) > rec.totalCost * 0.2 ? "warn-cell" : ""}
+                            className={delta != null && Math.abs(delta) > rec.recommendedTotal * 0.2 ? "warn-cell" : ""}
                             style={{ fontWeight: 500 }}
                           >
-                            {delta >= 0 ? "+" : ""}
-                            {delta.toFixed(2)}
+                            {delta != null
+                              ? `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`
+                              : "—"}
                           </td>
                         </tr>
                       );
