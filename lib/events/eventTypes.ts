@@ -14,7 +14,8 @@ export type DomainEventType =
   | "SyncedToERP"
   | "SyncedToProjectManagement";
 
-export interface DomainEvent<TPayload = object> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface DomainEvent<TPayload = any> {
   eventId: string;
   eventType: DomainEventType;
   aggregateId: string;          // Change order or project ID

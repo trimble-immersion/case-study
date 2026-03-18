@@ -7,14 +7,16 @@
 import type { DomainEvent, DomainEventType } from "./eventTypes";
 import { generateId } from "@/lib/data/store";
 
-type EventHandler<T = Record<string, unknown>> = (event: DomainEvent<T>) => void;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EventHandler = (event: DomainEvent<any>) => void;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const eventLog: DomainEvent<any>[] = [];
 const handlers = new Map<DomainEventType, EventHandler[]>();
-const eventLog: DomainEvent[] = [];
 
 export const EventBus = {
   /** Subscribe a handler to an event type (simulates a Kafka consumer group). */
-  subscribe<T>(eventType: DomainEventType, handler: EventHandler<T>): void {
+  subscribe<T extends object>(eventType: DomainEventType, handler: (event: DomainEvent<T>) => void): void {
     const existing = handlers.get(eventType) ?? [];
     handlers.set(eventType, [...existing, handler as EventHandler]);
   },
@@ -23,7 +25,7 @@ export const EventBus = {
   publish<T extends object>(
     eventType: DomainEventType,
     aggregateId: string,
-    aggregateType: DomainEvent["aggregateType"],
+    aggregateType: DomainEvent<T>["aggregateType"],
     payload: T,
     raisedBy?: string
   ): DomainEvent<T> {
@@ -36,19 +38,21 @@ export const EventBus = {
       raisedBy,
       payload,
     };
-    eventLog.push(event as DomainEvent);
+    eventLog.push(event);
     const registered = handlers.get(eventType) ?? [];
-    registered.forEach((h) => h(event as DomainEvent));
+    registered.forEach((h) => h(event));
     return event;
   },
 
   /** Retrieve event log for an aggregate (simulates event sourcing read). */
-  getEventsForAggregate(aggregateId: string): DomainEvent[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getEventsForAggregate(aggregateId: string): DomainEvent<any>[] {
     return eventLog.filter((e) => e.aggregateId === aggregateId);
   },
 
   /** Retrieve full event log (admin / debugging). */
-  getAll(): DomainEvent[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getAll(): DomainEvent<any>[] {
     return [...eventLog];
   },
 };
