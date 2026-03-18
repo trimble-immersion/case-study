@@ -1,45 +1,84 @@
 import Link from "next/link";
+import { listChangeOrders, listProjects } from "@/lib/services";
+import { StatusBadge } from "@/components/domain/StatusBadge";
+import { DataPanel } from "@/components/domain/DataPanel";
 
-export default function HomePage() {
+export default function DashboardPage() {
+  const projects = listProjects();
+  const changeOrders = listChangeOrders();
+  const pending = changeOrders.filter(
+    (c) =>
+      c.status === "Draft" ||
+      c.status === "In Review" ||
+      c.status === "Priced" ||
+      c.status === "Pending Approval"
+  );
+  const approved = changeOrders.filter((c) => c.status === "Approved");
+  const totalBillable = approved.reduce((s, c) => s + c.finalTotal, 0);
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">
-        Change Order Management
-      </h1>
-      <p className="text-gray-600">
-        One flow: capture a change in the field, see a suggested price, get PM
-        approval, then view it in finance as billable.
+    <div className="flex flex-col gap-4 p-4">
+      <h1 className="text-lg font-semibold text-gray-900">Dashboard</h1>
+      <p className="text-sm text-gray-600">
+        Work queue and summary. Open a change order to review scope, pricing recommendation, and approval.
       </p>
-      <ul className="flex flex-col gap-3">
-        <li>
-          <Link
-            href="/new"
-            className="text-blue-600 underline hover:text-blue-800"
-          >
-            Create change
-          </Link>{" "}
-          – Add a new change order (title, description, labor, materials,
-          equipment). Get a suggested total.
-        </li>
-        <li>
-          <Link
-            href="/pm"
-            className="text-blue-600 underline hover:text-blue-800"
-          >
-            PM review
-          </Link>{" "}
-          – Review drafts, edit final total, approve.
-        </li>
-        <li>
-          <Link
-            href="/finance"
-            className="text-blue-600 underline hover:text-blue-800"
-          >
-            Finance summary
-          </Link>{" "}
-          – Table of approved changes and totals.
-        </li>
-      </ul>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <DataPanel title="Projects">
+          <p className="text-sm text-gray-700">{projects.length} linked project(s)</p>
+          <ul className="mt-2 space-y-1 text-xs text-gray-600">
+            {projects.slice(0, 3).map((p) => (
+              <li key={p.id}>
+                {p.projectNumber} – {p.name}
+              </li>
+            ))}
+          </ul>
+        </DataPanel>
+        <DataPanel title="Pending">
+          <p className="text-sm font-medium text-gray-900">{pending.length}</p>
+          <p className="text-xs text-gray-500">Draft / In review / Pending approval</p>
+        </DataPanel>
+        <DataPanel title="Approved (billable)">
+          <p className="text-sm font-medium text-gray-900">${totalBillable.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+          <p className="text-xs text-gray-500">{approved.length} change order(s)</p>
+        </DataPanel>
+      </div>
+      <DataPanel title="Recent change orders">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 text-left text-gray-600">
+                <th className="pb-2 pr-4 font-medium">Number</th>
+                <th className="pb-2 pr-4 font-medium">Title</th>
+                <th className="pb-2 pr-4 font-medium">Status</th>
+                <th className="pb-2 pr-4 text-right font-medium">Final total</th>
+                <th className="pb-2 font-medium">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {changeOrders.slice(0, 10).map((co) => (
+                <tr key={co.id}>
+                  <td className="py-2 pr-4 text-gray-900">{co.changeOrderNumber}</td>
+                  <td className="py-2 pr-4 text-gray-700">{co.title}</td>
+                  <td className="py-2 pr-4">
+                    <StatusBadge status={co.status} />
+                  </td>
+                  <td className="py-2 pr-4 text-right font-medium text-gray-900">
+                    ${co.finalTotal.toFixed(2)}
+                  </td>
+                  <td className="py-2">
+                    <Link
+                      href={`/change-orders/${co.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Open
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DataPanel>
     </div>
   );
 }

@@ -1,40 +1,44 @@
-# Change Order Management – Workshop Prototype
+# Change Order Pricing – AI-Assisted Enterprise Demo
 
-A minimal change order flow: **capture a change (field) → suggested price → PM review/approve → finance sees it as billable**. Built for workshops: clone the repo and extend it.
+An **AI-assisted pricing capability for construction change orders** that fits into existing project management, ERP, and estimating systems. Explainable recommendations, approval workflow, and audit trail. Suitable for brownfield adoption.
 
 ## What's built
 
-- **Create change** (`/new`) – Form: title, description, labor (hours), materials ($), equipment ($). Rules-based “fake AI” pricing suggests a total. Saves as draft.
-- **Change detail** (`/[id]`) – Read-only view of one change and suggested total. Link to send to PM review.
-- **PM review** (`/pm`) – List of drafts. Open a change to edit **final total** and **Approve**. Approved items move to finance.
-- **Finance summary** (`/finance`) – Table of **approved** changes only, with **totals / impact** (sum of final totals).
+- **Dashboard** – Work queue and summary (pending, approved, billable total).
+- **Change Order Intake** – Create change orders with project, scope, labor/material/equipment/subcontractor. Linked project record and cost code.
+- **Change order detail** – Tabbed workspace: **Overview**, **Scope review**, **Pricing recommendation**, **Assumptions & evidence**, **Approval workflow**, **Audit history**.
+- **Pricing recommendation** – Recommended total, cost breakdown, budget/revenue impact, confidence (High/Medium/Low), basis of estimate, assumptions, evidence references, warnings and missing-information flags.
+- **Approval workflow** – Submit for approval from Pricing; approve with final total and comment; approval history.
+- **Finance summary** – Approved change orders and total billable impact.
+- **Settings** – Integration placeholders (ERP, Project Management, Estimating, Document Control, Event Bus).
 
-Data is in-memory and **seeded automatically** on first use (5–10 fake change orders), so no database or seed step required after clone.
+Data is in-memory and seeded with realistic construction mock data on first use. No database or env vars required.
 
 ## How to run
 
 1. Clone the repo.
-2. Install dependencies: `npm install`
-3. Run the app: `npm run dev`
-4. Open [http://localhost:3000](http://localhost:3000). Use the nav: Create change, PM review, Finance summary.
+2. `npm install`
+3. `npm run dev`
+4. Open [http://localhost:3000](http://localhost:3000). Use the left nav: Dashboard, Change Order Intake, Change Orders, Finance summary, Settings.
 
-No env vars or database setup needed. Seed data loads when you first list changes.
+## Architecture
+
+- **Frontend** – Next.js 14 (App Router), TypeScript, Tailwind. Left nav, header with context, tabbed workspace.
+- **Domain** – Typed entities (Project, ChangeOrder, ScopeItem, PricingRecommendation, ApprovalStep, ActivityEvent, etc.) and statuses (Draft, In Review, Priced, Pending Approval, Approved, etc.).
+- **AI layer** – `lib/ai/recommendationOrchestrator.ts`: structured input → recommendation with rationale, assumptions, confidence, warnings. Rules-based mock; swappable for real service.
+- **Services** – ChangeOrderService, PricingRecommendationService, ApprovalWorkflowService, AuditService, IntegrationService.
+- **Persistence** – In-memory store + mock data in `lib/data/`.
+
+See **[REFACTOR_SUMMARY.md](./REFACTOR_SUMMARY.md)** for folder structure, domain models, and mock implementations.
 
 ## Extension ideas (for teams)
 
-See **[GITHUB_ISSUES.md](./GITHUB_ISSUES.md)** for 8–10 extension ideas you can turn into GitHub issues (e.g. label `extension-idea`). Teams can pick one and build on this prototype.
-
-## Tech
-
-- Next.js 14 (App Router), TypeScript, Tailwind CSS
-- In-memory store in `lib/data.ts`; rules-based pricing in `lib/pricing.ts`
+See **[GITHUB_ISSUES.md](./GITHUB_ISSUES.md)** for extension ideas to turn into GitHub issues.
 
 ## Deploy (Vercel)
 
-1. **Push this repo to GitHub** (if you haven’t already).
-2. Go to [vercel.com](https://vercel.com) and sign in with GitHub.
-3. Click **Add New → Project**, then **Import** your repository.
-4. Leave the defaults (Vercel detects Next.js). Click **Deploy**.
-5. When the build finishes, open the generated URL. The flow works end-to-end; no environment variables needed.
+1. Push the repo to GitHub.
+2. At [vercel.com](https://vercel.com), sign in with GitHub, **Add New → Project**, import the repo.
+3. Deploy. No environment variables needed.
 
-**CLI option:** Install `vercel` (`npm i -g vercel`), run `vercel` in this folder, then `vercel --prod` for production.
+**CLI:** `npm i -g vercel`, then `vercel` and `vercel --prod`.

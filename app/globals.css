@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Enterprise workflow: compact, readable, restrained */
+@layer base {
+  body {
+    @apply text-gray-900;
+  }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    @apply outline-none ring-1 ring-gray-400 border-gray-400;
+  }
+}
