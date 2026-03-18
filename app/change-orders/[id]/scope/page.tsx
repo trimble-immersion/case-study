@@ -9,63 +9,131 @@ export default async function ScopePage({
   const { id } = await params;
   const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
+  const lineItems = co.scopeItems ?? [];
 
   return (
-    <div className="space-y-4">
-      <DataPanel title="Scope description">
-        <p className="text-sm text-gray-700">{co.description}</p>
+    <div>
+      {/* Cost inputs summary */}
+      <DataPanel title="SCOPE — Cost Input Summary">
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th style={{ textAlign: "right" }}>Value</th>
+              <th>Unit</th>
+              <th>Source</th>
+              <th>Verified</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="font-medium">Labor Hours</td>
+              <td style={{ textAlign: "right" }}>{co.laborHours}</td>
+              <td>HR</td>
+              <td className="warn-cell">Manual entry</td>
+              <td className="warn-cell">NO</td>
+              <td className="text-[#6a7e90]">Verify with field supervisor</td>
+            </tr>
+            <tr>
+              <td className="font-medium">Material Total</td>
+              <td style={{ textAlign: "right" }}>${co.materialTotal.toFixed(2)}</td>
+              <td>LS</td>
+              <td className="warn-cell">Manual entry</td>
+              <td className="warn-cell">NO</td>
+              <td className="text-[#6a7e90]">Quote or PO required</td>
+            </tr>
+            <tr>
+              <td className="font-medium">Equipment Total</td>
+              <td style={{ textAlign: "right" }}>${co.equipmentTotal.toFixed(2)}</td>
+              <td>LS</td>
+              <td className="warn-cell">Manual entry</td>
+              <td className="text-[#4a7a4a]">+15% markup</td>
+              <td className="text-[#6a7e90]">Markup applied per policy</td>
+            </tr>
+            <tr>
+              <td className="font-medium">Subcontractor</td>
+              <td style={{ textAlign: "right" }}>
+                {co.subcontractorTotal > 0 ? `$${co.subcontractorTotal.toFixed(2)}` : <span className="text-[#9aa8b6]">$0.00</span>}
+              </td>
+              <td>LS</td>
+              <td className="text-[#6a7e90]">—</td>
+              <td className="text-[#6a7e90]">—</td>
+              <td>
+                {co.materialTotal > 5000 && co.subcontractorTotal === 0 && (
+                  <span className="warn-cell">⚠ No sub – verify self-perform</span>
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </DataPanel>
-      <DataPanel title="Scope items">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+
+      {/* Scope description */}
+      <DataPanel title="SCOPE NARRATIVE — Description of Work">
+        <div className="border border-[#b0bcc8] bg-[#f4f6f8] px-2 py-1 text-[11px] text-[#1a2a3a]" style={{ minHeight: 40 }}>
+          {co.description}
+        </div>
+        <div className="mt-1 text-[10px] text-[#cc4400]">
+          ⚠ Scope not linked to drawing revision. Attach RFI or sketch before submission.
+        </div>
+      </DataPanel>
+
+      {/* Line items table */}
+      <DataPanel
+        title="LINE ITEMS — Scope Detail"
+        actions={
+          <>
+            <button className="btn-toolbar">Add Line Item</button>
+            <button className="btn-toolbar">Import from Takeoff</button>
+          </>
+        }
+      >
+        {lineItems.length === 0 ? (
+          <div className="border border-[#c8a000] bg-[#fff8e0] px-2 py-1 text-[11px] text-[#7a5000]">
+            ⚠ No structured line items on record. Cost inputs above are aggregate manual entries only.
+            Click &quot;Add Line Item&quot; to build itemized scope.
+          </div>
+        ) : (
+          <table>
             <thead>
-              <tr className="border-b border-gray-200 text-left text-gray-600">
-                <th className="pb-2 pr-4 font-medium">Category</th>
-                <th className="pb-2 pr-4 font-medium">Description</th>
-                <th className="pb-2 pr-4 font-medium">Quantity</th>
-                <th className="pb-2 pr-4 font-medium">Unit</th>
-                <th className="pb-2 font-medium">Cost code</th>
+              <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Cost Code</th>
+                <th style={{ textAlign: "right" }}>Qty</th>
+                <th>Unit</th>
+                <th style={{ textAlign: "right" }}>Unit Cost ($)</th>
+                <th style={{ textAlign: "right" }}>Total ($)</th>
+                <th>Source</th>
+                <th>Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {(co.scopeItems ?? []).map((s) => (
+            <tbody>
+              {lineItems.map((s) => (
                 <tr key={s.id}>
-                  <td className="py-2 pr-4 text-gray-900">{s.category}</td>
-                  <td className="py-2 pr-4 text-gray-700">{s.description}</td>
-                  <td className="py-2 pr-4 text-gray-700">{s.quantity ?? "—"}</td>
-                  <td className="py-2 pr-4 text-gray-700">{s.unit ?? "—"}</td>
-                  <td className="py-2 text-gray-700">{s.costCode ?? "—"}</td>
+                  <td className="text-[#6a7e90]">{s.sequence}</td>
+                  <td>{s.description}</td>
+                  <td>{s.category}</td>
+                  <td className={!s.costCode ? "warn-cell" : ""}>{s.costCode ?? <span className="text-[#cc4400]">MISSING</span>}</td>
+                  <td style={{ textAlign: "right" }}>{s.quantity ?? "—"}</td>
+                  <td>{s.unit ?? "—"}</td>
+                  <td style={{ textAlign: "right" }}>
+                    {s.unitCost != null ? s.unitCost.toFixed(2) : <span className="warn-cell">MISSING</span>}
+                  </td>
+                  <td style={{ textAlign: "right", fontWeight: 600 }}>
+                    {s.totalCost != null ? s.totalCost.toFixed(2) : "—"}
+                  </td>
+                  <td className="text-[#6a7e90]">Manual</td>
+                  <td className="text-[#6a7e90] whitespace-nowrap">
+                    {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      </DataPanel>
-      <DataPanel title="Cost inputs (from intake)">
-        <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-gray-500">Labor (hours)</dt>
-            <dd className="font-medium text-gray-900">{co.laborHours}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Material ($)</dt>
-            <dd className="font-medium text-gray-900">
-              ${co.materialTotal.toFixed(2)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Equipment ($)</dt>
-            <dd className="font-medium text-gray-900">
-              ${co.equipmentTotal.toFixed(2)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Subcontractor ($)</dt>
-            <dd className="font-medium text-gray-900">
-              ${co.subcontractorTotal.toFixed(2)}
-            </dd>
-          </div>
-        </dl>
+        )}
       </DataPanel>
     </div>
   );

@@ -6,11 +6,27 @@ import type { ChangeOrder } from "@/lib/domain/types";
 
 export function PricingActions({ changeOrder }: { changeOrder: ChangeOrder }) {
   const router = useRouter();
+  const [generating, setGenerating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
   const canSubmit =
     changeOrder.status === "Draft" ||
     changeOrder.status === "Priced" ||
     changeOrder.status === "In Review";
+
+  async function handleGeneratePricing() {
+    setGenerating(true);
+    try {
+      await fetch(`/api/change-orders/${changeOrder.id}/generate-pricing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      router.refresh();
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -25,17 +41,26 @@ export function PricingActions({ changeOrder }: { changeOrder: ChangeOrder }) {
     }
   }
 
-  if (!canSubmit) return null;
   return (
-    <div className="rounded border border-gray-200 bg-white p-3">
+    <>
       <button
         type="button"
-        onClick={handleSubmit}
-        disabled={submitting}
-        className="rounded bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+        onClick={handleGeneratePricing}
+        disabled={generating}
+        className="btn-primary"
       >
-        {submitting ? "Submitting…" : "Submit for approval"}
+        {generating ? "Running pricing engine…" : "Generate Pricing"}
       </button>
-    </div>
+      {canSubmit && (
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="btn-secondary ml-1"
+        >
+          {submitting ? "Submitting…" : "Submit for Approval"}
+        </button>
+      )}
+    </>
   );
 }

@@ -1,29 +1,19 @@
 "use client";
 
 import { LeftNav } from "./LeftNav";
-import { Header } from "./Header";
-import type { Project } from "@/lib/domain/types";
-import type { ChangeOrder } from "@/lib/domain/types";
+import { TopBar } from "./TopBar";
 
-interface AppShellProps {
-  children: React.ReactNode;
-  project?: Project | null;
-  changeOrder?: ChangeOrder | null;
-  title?: string;
-}
-
-export function AppShell({
-  children,
-  project,
-  changeOrder,
-  title,
-}: AppShellProps) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <LeftNav />
-      <div className="flex flex-1 flex-col min-w-0">
-        <Header project={project} changeOrder={changeOrder} title={title} />
-        <div className="flex-1 min-h-0">{children}</div>
+    <div className="flex h-screen flex-col overflow-hidden bg-[#dde2e8]">
+      {/* Top application bar */}
+      <TopBar />
+      {/* Below top bar: left nav + main content */}
+      <div className="flex flex-1 min-h-0">
+        <LeftNav />
+        <div className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
+          {children}
+        </div>
       </div>
     </div>
   );

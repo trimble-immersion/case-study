@@ -18,29 +18,19 @@ export function ApprovalForm({ changeOrder }: { changeOrder: ChangeOrder }) {
     e.preventDefault();
     setError("");
     const value = parseFloat(finalTotal);
-    if (isNaN(value) || value < 0) {
-      setError("Enter a valid final total.");
-      return;
-    }
-    if (!approvedBy.trim()) {
-      setError("Enter approver name.");
-      return;
-    }
+    if (isNaN(value) || value < 0) { setError("ERR: Invalid final total."); return; }
+    if (!approvedBy.trim()) { setError("ERR: Approver name required."); return; }
     setSubmitting(true);
     try {
       const res = await fetch(`/api/change-orders/${changeOrder.id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          approvedBy: approvedBy.trim(),
-          finalTotal: value,
-          comment: comment.trim() || undefined,
-        }),
+        body: JSON.stringify({ approvedBy: approvedBy.trim(), finalTotal: value, comment: comment.trim() || undefined }),
       });
       if (!res.ok) throw new Error("Approve failed");
       router.refresh();
     } catch {
-      setError("Failed to approve.");
+      setError("ERR-500: Approval action failed. Contact system administrator.");
     } finally {
       setSubmitting(false);
     }
@@ -48,57 +38,80 @@ export function ApprovalForm({ changeOrder }: { changeOrder: ChangeOrder }) {
 
   if (!canApprove) {
     return (
-      <div className="rounded border border-gray-200 bg-white p-4">
-        <p className="text-sm text-gray-500">
-          This change order is not pending approval. Submit from the Pricing tab to send for approval.
-        </p>
+      <div className="text-[11px] text-[#6a7e90]">
+        Record is not in Pending Approval state. No action available.
+        {changeOrder.status === "Approved" && (
+          <span className="ml-2 text-[#4a7a4a] font-semibold">✓ Already approved.</span>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="rounded border border-gray-200 bg-white p-4">
-      <h3 className="text-sm font-medium text-gray-900">Approve change order</h3>
-      <form onSubmit={handleApprove} className="mt-3 space-y-3">
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Final total ($)</label>
-          <input
-            type="number"
-            min={0}
-            step={0.01}
-            value={finalTotal}
-            onChange={(e) => setFinalTotal(e.target.value)}
-            className="mt-1 w-full max-w-xs rounded border border-gray-300 px-2 py-1.5 text-sm"
-          />
+    <form onSubmit={handleApprove}>
+      <table style={{ marginBottom: 8 }}>
+        <tbody>
+          <tr>
+            <td className="text-[#6a7e90] font-medium whitespace-nowrap pr-3">Final Approved Amount ($)</td>
+            <td>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={finalTotal}
+                onChange={(e) => setFinalTotal(e.target.value)}
+                className="w-32"
+                required
+              />
+            </td>
+            <td className="text-[10px] warn-cell pl-3">
+              {parseFloat(finalTotal) !== changeOrder.recommendedTotal && "OVERRIDE — differs from estimate"}
+            </td>
+          </tr>
+          <tr>
+            <td className="text-[#6a7e90] font-medium whitespace-nowrap pr-3">Approver Name / ID</td>
+            <td>
+              <input
+                type="text"
+                value={approvedBy}
+                onChange={(e) => setApprovedBy(e.target.value)}
+                placeholder="Last, First"
+                className="w-48"
+                required
+              />
+            </td>
+            <td className="text-[10px] text-[#6a7e90] pl-3">Enter as shown in directory</td>
+          </tr>
+          <tr>
+            <td className="text-[#6a7e90] font-medium whitespace-nowrap pr-3">Approval Comment</td>
+            <td colSpan={2}>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={2}
+                className="w-full"
+                style={{ width: 360 }}
+                placeholder="Optional — will be recorded in audit log"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {error && (
+        <div className="mb-2 border border-[#c04040] bg-[#ffe0e0] px-2 py-1 text-[11px] text-[#900000]">
+          {error}
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Approved by</label>
-          <input
-            type="text"
-            value={approvedBy}
-            onChange={(e) => setApprovedBy(e.target.value)}
-            className="mt-1 w-full max-w-xs rounded border border-gray-300 px-2 py-1.5 text-sm"
-            placeholder="Name"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700">Comment (optional)</label>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={2}
-            className="mt-1 w-full max-w-md rounded border border-gray-300 px-2 py-1.5 text-sm"
-          />
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
-        >
-          {submitting ? "Approving…" : "Approve"}
+      )}
+      <div className="flex gap-2 items-center">
+        <button type="submit" disabled={submitting} className="btn-primary">
+          {submitting ? "Processing…" : "Approve — Record Final Amount"}
         </button>
-      </form>
-    </div>
+        <button type="button" className="btn-secondary">Reject</button>
+        <button type="button" className="btn-secondary">Request Revision</button>
+        <span className="text-[10px] text-[#6a7e90] ml-2">
+          Action will be logged to audit trail and trigger ERP sync.
+        </span>
+      </div>
+    </form>
   );
 }

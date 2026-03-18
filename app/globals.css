@@ -2,14 +2,125 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Enterprise workflow: compact, readable, restrained */
 @layer base {
   body {
-    @apply text-gray-900;
+    @apply bg-[#dde2e8] text-[#1a1a1a];
+    font-size: 12px;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  /* Enterprise table defaults */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th {
+    @apply bg-[#c8d0da] text-[#1a2a3a] text-left;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border: 1px solid #a8b4c0;
+    white-space: nowrap;
+  }
+  td {
+    @apply text-[#1a1a1a];
+    font-size: 11px;
+    padding: 2px 6px;
+    border: 1px solid #c8d0da;
+  }
+  tr:hover td {
+    background-color: #eef2f6;
+  }
+
+  /* Dense form inputs */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  select,
+  textarea {
+    @apply border border-[#a0aab4] bg-white text-[#1a1a1a];
+    font-size: 11px;
+    padding: 2px 5px;
+    border-radius: 0;
+    outline: none;
   }
   input:focus,
   select:focus,
   textarea:focus {
-    @apply outline-none ring-1 ring-gray-400 border-gray-400;
+    border-color: #2563a8;
+    outline: 1px solid #2563a8;
+  }
+
+  /* Scrollbars - thin enterprise style */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #d8dde3; }
+  ::-webkit-scrollbar-thumb { background: #9aa8b6; border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: #6a7e90; }
+}
+
+@layer components {
+  /* Primary action button */
+  .btn-primary {
+    @apply bg-[#1a4a7a] text-white border border-[#1a3a5c];
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { @apply bg-[#1a3a5c]; }
+  .btn-primary:disabled { @apply opacity-50 cursor-not-allowed; }
+
+  /* Secondary button */
+  .btn-secondary {
+    @apply bg-[#e4e8ee] text-[#1a2a3a] border border-[#a0aab4];
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-secondary:hover { @apply bg-[#d0d8e2]; }
+
+  /* Toolbar button */
+  .btn-toolbar {
+    @apply bg-[#e8edf2] text-[#1a2a3a] border border-[#b0bcc8];
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-toolbar:hover { @apply bg-[#d4dce6]; }
+
+  /* Warning indicator */
+  .warn-cell {
+    @apply text-[#b45000] bg-[#fff3e6];
+  }
+  .error-cell {
+    @apply text-[#990000] bg-[#ffe6e6];
+  }
+
+  /* Section panel */
+  .panel {
+    @apply border border-[#b0bcc8] bg-white;
+  }
+  .panel-header {
+    @apply border-b border-[#b0bcc8] bg-[#d4dce6] px-2 py-1 text-[11px] font-semibold text-[#1a2a3a] uppercase tracking-wide;
+  }
+  .panel-body {
+    @apply p-2;
+  }
+
+  /* Status tag - flat, enterprise */
+  .status-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-width: 1px;
+    border-style: solid;
+    display: inline-block;
   }
 }

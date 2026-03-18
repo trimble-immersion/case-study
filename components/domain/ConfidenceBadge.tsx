@@ -2,18 +2,20 @@
 
 import type { PricingConfidence } from "@/lib/domain/types";
 
-const styles: Record<PricingConfidence, string> = {
-  High: "bg-green-100 text-green-800",
-  Medium: "bg-amber-100 text-amber-800",
-  Low: "bg-red-100 text-red-800",
+const conf: Record<PricingConfidence, { bg: string; text: string; border: string }> = {
+  High:   { bg: "#e0f2e0", text: "#1a5a1a", border: "#4a9a4a" },
+  Medium: { bg: "#fff8e0", text: "#7a5000", border: "#c8a000" },
+  Low:    { bg: "#ffe0e0", text: "#7a0000", border: "#c04040" },
 };
 
 export function ConfidenceBadge({ confidence }: { confidence: PricingConfidence }) {
+  const s = conf[confidence];
   return (
     <span
-      className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${styles[confidence]}`}
+      className="status-tag"
+      style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border }}
     >
-      Pricing confidence: {confidence}
+      CONF: {confidence.toUpperCase()}
     </span>
   );
 }

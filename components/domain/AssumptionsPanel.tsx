@@ -3,24 +3,27 @@
 import type { Assumption } from "@/lib/domain/types";
 
 export function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
-  if (assumptions.length === 0) {
-    return (
-      <p className="text-sm text-gray-500">No assumptions recorded.</p>
-    );
+  if (!assumptions.length) {
+    return <p className="text-[11px] text-[#6a7e90]">No assumptions recorded.</p>;
   }
   return (
-    <ul className="space-y-2">
-      {assumptions.map((a) => (
-        <li
-          key={a.id}
-          className="rounded border border-gray-200 bg-white px-3 py-2 text-sm"
-        >
-          <p className="text-gray-900">{a.description}</p>
-          {a.source && (
-            <p className="mt-1 text-xs text-gray-500">Source: {a.source}</p>
-          )}
-        </li>
-      ))}
-    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th>Assumption</th>
+          <th>Source / Basis</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {assumptions.map((a) => (
+          <tr key={a.id}>
+            <td>{a.description}</td>
+            <td className="text-[#6a7e90]">{a.source ?? "—"}</td>
+            <td className="text-[#4a7a4a]">Active</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

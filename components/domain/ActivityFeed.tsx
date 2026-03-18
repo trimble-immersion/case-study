@@ -4,25 +4,30 @@ import type { AuditRecord } from "@/lib/domain/types";
 
 export function ActivityFeed({ events }: { events: AuditRecord[] }) {
   if (events.length === 0) {
-    return <p className="text-sm text-gray-500">No activity yet.</p>;
+    return <p className="text-[11px] text-[#6a7e90]">No audit records found.</p>;
   }
   return (
-    <ul className="space-y-0">
-      {events.map((e) => (
-        <li
-          key={e.id}
-          className="flex gap-3 border-b border-gray-100 py-2 last:border-0"
-        >
-          <span className="shrink-0 text-xs text-gray-400">
-            {new Date(e.timestamp).toLocaleString()}
-          </span>
-          <span className="text-xs font-medium text-gray-500">{e.eventType}</span>
-          <span className="text-sm text-gray-700">{e.description}</span>
-          {e.userName && (
-            <span className="text-xs text-gray-400">— {e.userName}</span>
-          )}
-        </li>
-      ))}
-    </ul>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Event Type</th>
+          <th>Description</th>
+          <th>User</th>
+          <th>User ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {events.map((e) => (
+          <tr key={e.id}>
+            <td className="text-[#4a5a6a] whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</td>
+            <td className="font-medium whitespace-nowrap">{e.eventType}</td>
+            <td>{e.description}</td>
+            <td>{e.userName ?? "—"}</td>
+            <td className="text-[#6a7e90]">{e.userId ?? "SYSTEM"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

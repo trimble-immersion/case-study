@@ -4,17 +4,20 @@ export function DataPanel({
   title,
   children,
   className = "",
+  actions,
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
+  actions?: React.ReactNode;
 }) {
   return (
-    <section className={`rounded border border-gray-200 bg-white ${className}`}>
-      <h3 className="border-b border-gray-200 px-3 py-2 text-sm font-medium text-gray-700">
-        {title}
-      </h3>
-      <div className="p-3">{children}</div>
+    <section className={`panel mb-2 ${className}`}>
+      <div className="panel-header flex items-center justify-between">
+        <span>{title}</span>
+        {actions && <div className="flex items-center gap-1 normal-case tracking-normal font-normal">{actions}</div>}
+      </div>
+      <div className="panel-body">{children}</div>
     </section>
   );
 }

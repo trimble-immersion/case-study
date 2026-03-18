@@ -20,25 +20,28 @@ export function TabbedWorkspace({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex border-b border-gray-200 bg-white">
+      {/* Tab bar – flat, dense, enterprise */}
+      <div className="flex shrink-0 border-b border-[#8a9aaa] bg-[#c8d4de]">
         {tabs.map((tab) => {
           const active = pathname === tab.href;
           return (
             <Link
               key={tab.id}
               href={tab.href}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${
+              className={`px-3 py-1 text-[11px] font-medium border-r border-[#8a9aaa] whitespace-nowrap ${
                 active
-                  ? "border-gray-900 text-gray-900"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-[#1a2a3a] border-b-2 border-b-[#1a4a7a]"
+                  : "text-[#2a3a4a] hover:bg-[#b8c8d8] hover:text-[#1a2a3a]"
               }`}
+              style={{ marginBottom: active ? -1 : 0 }}
             >
               {tab.label}
             </Link>
           );
         })}
       </div>
-      <div className="flex-1 overflow-auto bg-gray-50 p-4">{children}</div>
+      {/* Content area */}
+      <div className="flex-1 overflow-auto bg-[#dde2e8] p-2">{children}</div>
     </div>
   );
 }

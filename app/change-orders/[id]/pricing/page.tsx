@@ -13,82 +13,131 @@ export default async function PricingPage({
   const { id } = await params;
   const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
-  let rec = PricingRecommendationService.getCurrentRecommendation(id);
-  if (!rec) {
-    const result = PricingRecommendationService.generateAndStoreRecommendation({
-      changeOrderId: id,
-      projectId: co.projectId,
-      laborHours: co.laborHours,
-      materialTotal: co.materialTotal,
-      equipmentTotal: co.equipmentTotal,
-      subcontractorTotal: co.subcontractorTotal,
-      scopeSummary: co.description,
-      costCode: co.costCode,
-    });
-    rec = result.recommendation;
-  }
+  const rec = PricingRecommendationService.getCurrentRecommendation(id);
 
   return (
-    <div className="space-y-4">
-      <DataPanel title="Recommended price">
-        <div className="flex items-center justify-between">
-          <span className="text-2xl font-semibold text-gray-900">
-            ${rec.recommendedTotal.toFixed(2)}
-          </span>
-          <ConfidenceBadge confidence={rec.confidence} />
+    <div>
+      {/* Toolbar */}
+      <div className="border border-[#8a9aaa] bg-[#e4eaf0] px-2 flex items-center gap-1 mb-2" style={{ height: 26 }}>
+        <PricingActions changeOrder={co} />
+        <span className="text-[#9aa8b6] mx-1">|</span>
+        <button className="btn-toolbar">Recalculate</button>
+        <button className="btn-toolbar">Override Total</button>
+        <button className="btn-toolbar">Export Estimate</button>
+        {rec && (
+          <>
+            <span className="text-[#9aa8b6] mx-1">|</span>
+            <span className="text-[10px] text-[#6a7e90]">
+              Generated: {new Date(rec.createdAt).toLocaleString()} · {rec.createdBy ?? "SYSTEM"}
+            </span>
+            <span className="ml-2"><ConfidenceBadge confidence={rec.confidence} /></span>
+          </>
+        )}
+      </div>
+
+      {!rec ? (
+        <div className="border border-[#c8a000] bg-[#fff8e0] px-3 py-2 mb-2">
+          <div className="text-[11px] font-semibold text-[#7a5000]">⚠ NO PRICING ESTIMATE ON RECORD</div>
+          <div className="text-[11px] text-[#7a5000] mt-0.5">
+            A pricing estimate has not been generated for this change order.
+            Click <strong>Generate Pricing</strong> in the toolbar above to run the pricing engine.
+            Manual override is also available.
+          </div>
+          <div className="text-[10px] text-[#9a7000] mt-1">
+            Note: Estimating MEP is currently offline. Values will be calculated using internal rate tables only.
+          </div>
         </div>
-      </DataPanel>
-      <DataPanel title="Cost breakdown">
-        <CostBreakdownTable breakdown={rec.costBreakdown} />
-      </DataPanel>
-      <DataPanel title="Budget & revenue impact">
-        <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-gray-500">Budget impact</dt>
-            <dd className="font-medium text-gray-900">
-              ${rec.budgetImpact.toFixed(2)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">Revenue impact</dt>
-            <dd className="font-medium text-gray-900">
-              ${rec.revenueImpact.toFixed(2)}
-            </dd>
-          </div>
-          {rec.scheduleImpactDays != null && (
-            <div>
-              <dt className="text-gray-500">Schedule impact</dt>
-              <dd className="font-medium text-gray-900">
-                {rec.scheduleImpactDays} day(s)
-              </dd>
+      ) : (
+        <>
+          {/* Recommended value header */}
+          <DataPanel title="ESTIMATE VALUE — AI-Assisted Pricing Output">
+            <div className="flex items-start gap-6">
+              <div>
+                <div className="text-[10px] text-[#6a7e90] uppercase mb-0.5">Recommended Estimate Value</div>
+                <div className="text-[22px] font-bold text-[#1a2a3a]" style={{ fontFamily: "monospace" }}>
+                  ${rec.recommendedTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </div>
+                <div className="text-[10px] text-[#6a7e90] mt-0.5">System-generated · subject to PM review and override</div>
+              </div>
+              <div className="border-l border-[#b0bcc8] pl-4">
+                <table style={{ minWidth: 240 }}>
+                  <tbody>
+                    <tr>
+                      <td className="text-[#6a7e90]">Budget Impact</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>${rec.budgetImpact.toFixed(2)}</td>
+                      <td className="text-[10px] warn-cell pl-2">↑ Increase</td>
+                    </tr>
+                    <tr>
+                      <td className="text-[#6a7e90]">Revenue Impact</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>${rec.revenueImpact.toFixed(2)}</td>
+                      <td className="text-[10px] text-[#4a7a4a] pl-2">Billable</td>
+                    </tr>
+                    {rec.scheduleImpactDays != null && (
+                      <tr>
+                        <td className="text-[#6a7e90]">Schedule Impact</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{rec.scheduleImpactDays} day(s)</td>
+                        <td className="text-[10px] warn-cell pl-2">⚠ Verify</td>
+                      </tr>
+                    )}
+                    <tr>
+                      <td className="text-[#6a7e90]">Current Final Total</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>${co.finalTotal.toFixed(2)}</td>
+                      <td className="text-[10px] text-[#6a7e90] pl-2">
+                        {co.finalTotal !== rec.recommendedTotal && (
+                          <span className="warn-cell">OVERRIDDEN</span>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </DataPanel>
+
+          {/* Cost breakdown */}
+          <DataPanel title="COST BREAKDOWN — Basis of Estimate">
+            <CostBreakdownTable breakdown={rec.costBreakdown} />
+          </DataPanel>
+
+          {/* Basis of estimate */}
+          <DataPanel title="BASIS OF ESTIMATE — Rationale">
+            <div className="border border-[#b0bcc8] bg-[#f4f6f8] px-2 py-1 text-[11px] text-[#1a2a3a] mb-1">
+              {rec.rationale}
+            </div>
+          </DataPanel>
+
+          {/* Warnings and flags */}
+          {(rec.warnings.length > 0 || rec.missingInfoFlags.length > 0) && (
+            <DataPanel title="WARNINGS &amp; MISSING INFORMATION — Manual Review Required">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Message</th>
+                    <th>Action Required</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rec.warnings.map((w, i) => (
+                    <tr key={`w-${i}`}>
+                      <td className="warn-cell font-semibold">WARNING</td>
+                      <td className="warn-cell">{w}</td>
+                      <td className="text-[#6a7e90]">Review before submission</td>
+                    </tr>
+                  ))}
+                  {rec.missingInfoFlags.map((f, i) => (
+                    <tr key={`f-${i}`}>
+                      <td className="error-cell font-semibold">MISSING DATA</td>
+                      <td className="error-cell">{f}</td>
+                      <td className="text-[#6a7e90]">Manual input required</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </DataPanel>
           )}
-        </dl>
-      </DataPanel>
-      <DataPanel title="Basis of estimate">
-        <p className="text-sm text-gray-700">{rec.rationale}</p>
-        <p className="mt-2 text-xs text-gray-500">
-          Recommendation generated: {new Date(rec.createdAt).toLocaleString()}
-          {rec.createdBy && ` by ${rec.createdBy}`}
-        </p>
-      </DataPanel>
-      {(rec.warnings.length > 0 || rec.missingInfoFlags.length > 0) && (
-        <DataPanel title="Warnings & missing information">
-          <ul className="space-y-1 text-sm">
-            {rec.warnings.map((w, i) => (
-              <li key={`w-${i}`} className="text-amber-800">
-                {w}
-              </li>
-            ))}
-            {rec.missingInfoFlags.map((f, i) => (
-              <li key={`f-${i}`} className="text-gray-600">
-                Missing: {f}
-              </li>
-            ))}
-          </ul>
-        </DataPanel>
+        </>
       )}
-      <PricingActions changeOrder={co} />
     </div>
   );
 }

@@ -2,28 +2,25 @@
 
 import type { ApprovalStatus } from "@/lib/domain/types";
 
-const statusStyles: Record<
-  ApprovalStatus,
-  string
-> = {
-  Draft: "bg-gray-100 text-gray-700",
-  "In Review": "bg-amber-100 text-amber-800",
-  Priced: "bg-blue-100 text-blue-800",
-  "Needs Revision": "bg-orange-100 text-orange-800",
-  "Pending Approval": "bg-sky-100 text-sky-800",
-  Approved: "bg-green-100 text-green-800",
-  Rejected: "bg-red-100 text-red-800",
-  Synced: "bg-slate-100 text-slate-700",
+const statusStyles: Record<ApprovalStatus, { bg: string; text: string; border: string; label: string }> = {
+  Draft:            { bg: "#e8edf2", text: "#2a3a4a", border: "#9aa8b6", label: "DRAFT" },
+  "In Review":      { bg: "#fff8e0", text: "#7a5000", border: "#c8a000", label: "IN REVIEW" },
+  Priced:           { bg: "#e0eeff", text: "#0a3a7a", border: "#5090d0", label: "PRICED" },
+  "Needs Revision": { bg: "#fff0e0", text: "#8a3000", border: "#d06000", label: "NEEDS REVISION" },
+  "Pending Approval":{ bg: "#e8f0ff", text: "#1a3a8a", border: "#6080c8", label: "PENDING APPR." },
+  Approved:         { bg: "#e0f2e0", text: "#1a5a1a", border: "#4a9a4a", label: "APPROVED" },
+  Rejected:         { bg: "#ffe0e0", text: "#7a0000", border: "#c04040", label: "REJECTED" },
+  Synced:           { bg: "#e8e8f8", text: "#2a2a6a", border: "#7070b0", label: "SYNCED" },
 };
 
 export function StatusBadge({ status }: { status: ApprovalStatus }) {
+  const s = statusStyles[status] ?? statusStyles.Draft;
   return (
     <span
-      className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
-        statusStyles[status] ?? "bg-gray-100 text-gray-700"
-      }`}
+      className="status-tag"
+      style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border }}
     >
-      {status}
+      {s.label}
     </span>
   );
 }

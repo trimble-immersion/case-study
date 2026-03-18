@@ -1,4 +1,4 @@
-import { getChangeOrderById } from "@/lib/services/changeOrderService";
+import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { AuditService } from "@/lib/services/auditService";
 import { DataPanel } from "@/components/domain/DataPanel";
 import { ActivityFeed } from "@/components/domain/ActivityFeed";
@@ -9,16 +9,25 @@ export default async function AuditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const co = getChangeOrderById(id);
+  const co = ChangeOrderService.getChangeOrderById(id);
   if (!co) return null;
   const activity = AuditService.getAuditTrail(id);
 
   return (
-    <div className="space-y-4">
-      <DataPanel title="Activity feed">
-        <p className="mb-2 text-xs text-gray-500">
-          Audit trail for {co.changeOrderNumber}. Who changed what and when.
-        </p>
+    <div>
+      <DataPanel
+        title="AUDIT LOG — Immutable Change History"
+        actions={
+          <>
+            <button className="btn-toolbar">Export Log</button>
+            <button className="btn-toolbar">Print</button>
+          </>
+        }
+      >
+        <div className="mb-1 text-[10px] text-[#6a7e90]">
+          Append-only record. {activity.length} event(s) logged for {co.changeOrderNumber}.
+          All timestamps in server UTC.
+        </div>
         <ActivityFeed events={activity} />
       </DataPanel>
     </div>

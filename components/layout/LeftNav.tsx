@@ -3,43 +3,84 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
-  { href: "/", label: "Dashboard" },
-  { href: "/intake", label: "Change Order Intake" },
-  { href: "/change-orders", label: "Change Orders" },
-  { href: "/finance", label: "Finance summary" },
-  { href: "/settings", label: "Settings" },
+const navGroups = [
+  {
+    group: "WORKSPACE",
+    items: [
+      { href: "/", label: "Dashboard" },
+      { href: "/change-orders", label: "Change Orders" },
+      { href: "/intake", label: "New CO – Intake" },
+      { href: "/finance", label: "Finance / Billable" },
+    ],
+  },
+  {
+    group: "SYSTEMS",
+    items: [
+      { href: "/settings", label: "Integrations" },
+      { href: "/settings", label: "ERP Sync Status", warn: true },
+      { href: "/settings", label: "Document Control" },
+    ],
+  },
+  {
+    group: "ADMIN",
+    items: [
+      { href: "/settings", label: "Cost Code Table" },
+      { href: "/settings", label: "Labor Rate Table" },
+      { href: "/settings", label: "Project Registry" },
+      { href: "/settings", label: "User Permissions" },
+    ],
+  },
 ];
 
 export function LeftNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex w-52 flex-col border-r border-gray-200 bg-white">
-      <div className="flex h-12 items-center border-b border-gray-200 px-4">
-        <span className="text-sm font-semibold text-gray-800">
-          Change Order Pricing
-        </span>
+    <nav
+      className="flex flex-col border-r border-[#0a2038] bg-[#1a3a5c] overflow-y-auto shrink-0"
+      style={{ width: 180, minWidth: 180 }}
+    >
+      {/* Module header */}
+      <div className="border-b border-[#0a2038] bg-[#0f2a45] px-2 py-1.5">
+        <div className="text-[10px] font-bold tracking-widest uppercase text-[#7ab0d8]">CO PRICING</div>
+        <div className="text-[9px] text-[#4a7090] mt-0.5">v3.2.1 · Build 20240210</div>
       </div>
-      <ul className="flex flex-col gap-0.5 p-2">
-        {navItems.map((item) => {
-          const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
-          return (
-            <li key={item.href}>
+
+      {/* Nav groups */}
+      {navGroups.map((group) => (
+        <div key={group.group} className="border-b border-[#0f2a45]">
+          <div className="px-2 py-1 text-[9px] font-bold tracking-widest uppercase text-[#4a7090]">
+            {group.group}
+          </div>
+          {group.items.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/" && pathname?.startsWith(item.href));
+            return (
               <Link
+                key={item.label}
                 href={item.href}
-                className={`block rounded px-3 py-2 text-sm ${
+                className={`flex items-center justify-between px-3 py-1 text-[11px] border-b border-[#0f2a45] ${
                   active
-                    ? "bg-gray-100 font-medium text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-[#2563a8] text-white font-semibold"
+                    : "text-[#a8c4dc] hover:bg-[#1e4878] hover:text-white"
                 }`}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {"warn" in item && item.warn && (
+                  <span className="text-[9px] bg-[#cc4400] text-white px-1">!</span>
+                )}
               </Link>
-            </li>
-          );
-        })}
-      </ul>
+            );
+          })}
+        </div>
+      ))}
+
+      {/* Bottom status strip */}
+      <div className="mt-auto border-t border-[#0a2038] px-2 py-1">
+        <div className="text-[9px] text-[#4a7090]">Last sync: 06:00 UTC</div>
+        <div className="text-[9px] text-[#cc6600] mt-0.5">⚠ Estimating: offline</div>
+      </div>
     </nav>
   );
 }
