@@ -28,13 +28,13 @@ export default function ChangeOrderOverviewPage({
                   <th style={{ width: 140 }}>Status</th>
                   <td><StatusBadge status={co.status} /></td>
                   <th style={{ width: 140 }}>Record Type</th>
-                  <td>{co.changeType ?? "Change Order"}</td>
+                  <td>Change Order</td>
                 </tr>
                 <tr>
                   <th>Title</th>
                   <td colSpan={3} style={{ fontWeight: 500 }}>{co.title}</td>
                   <th>Priority</th>
-                  <td className={!co.priority ? "warn-cell" : ""}>{co.priority ?? "NOT SET"}</td>
+                  <td style={{ color: "var(--text-muted)" }}>Normal</td>
                 </tr>
                 <tr>
                   <th>Cost Code</th>
