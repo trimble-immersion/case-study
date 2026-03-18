@@ -20,7 +20,7 @@ export const EventBus = {
   },
 
   /** Publish a domain event (simulates Kafka producer publish). */
-  publish<T extends Record<string, unknown>>(
+  publish<T extends object>(
     eventType: DomainEventType,
     aggregateId: string,
     aggregateType: DomainEvent["aggregateType"],

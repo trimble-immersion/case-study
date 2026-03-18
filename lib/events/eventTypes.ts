@@ -14,7 +14,7 @@ export type DomainEventType =
   | "SyncedToERP"
   | "SyncedToProjectManagement";
 
-export interface DomainEvent<TPayload = Record<string, unknown>> {
+export interface DomainEvent<TPayload = object> {
   eventId: string;
   eventType: DomainEventType;
   aggregateId: string;          // Change order or project ID
