@@ -28,7 +28,7 @@ export default async function ScopePage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {co.scopeItems.map((s) => (
+              {(co.scopeItems ?? []).map((s) => (
                 <tr key={s.id}>
                   <td className="py-2 pr-4 text-gray-900">{s.category}</td>
                   <td className="py-2 pr-4 text-gray-700">{s.description}</td>
