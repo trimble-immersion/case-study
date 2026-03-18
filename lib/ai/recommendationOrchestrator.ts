@@ -7,6 +7,7 @@
 import type {
   PricingRecommendation,
   PricingRecommendationRequest,
+  PricingRecommendationResponse,
   CostBreakdown,
   Assumption,
   EvidenceItem,
