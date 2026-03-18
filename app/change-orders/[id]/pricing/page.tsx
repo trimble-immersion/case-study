@@ -12,7 +12,7 @@ export default function PricingPage({ params }: { params: { id: string } }) {
   if (!co) return notFound();
   const project = ProjectService.getProjectById(co.projectId) ?? null;
   const rec = co.currentRecommendationId
-    ? PricingRecommendationService.getRecommendation(co.currentRecommendationId)
+    ? PricingRecommendationService.getRecommendationById(co.currentRecommendationId)
     : null;
 
   return (
