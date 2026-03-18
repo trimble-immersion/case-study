@@ -4,7 +4,7 @@ import type { AuditRecord } from "@/lib/domain/types";
 
 export function ActivityFeed({ events }: { events: AuditRecord[] }) {
   if (events.length === 0) {
-    return <p className="text-[11px] text-[#6a7e90]">No audit records found.</p>;
+    return <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>No audit records found.</p>;
   }
   return (
     <table>
@@ -20,11 +20,13 @@ export function ActivityFeed({ events }: { events: AuditRecord[] }) {
       <tbody>
         {events.map((e) => (
           <tr key={e.id}>
-            <td className="text-[#4a5a6a] whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</td>
-            <td className="font-medium whitespace-nowrap">{e.eventType}</td>
+            <td style={{ color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+              {new Date(e.timestamp).toLocaleString()}
+            </td>
+            <td style={{ fontWeight: 500, whiteSpace: "nowrap" }}>{e.eventType}</td>
             <td>{e.description}</td>
             <td>{e.userName ?? "—"}</td>
-            <td className="text-[#6a7e90]">{e.userId ?? "SYSTEM"}</td>
+            <td style={{ color: "var(--text-muted)", fontSize: 11 }}>{e.userId ?? "SYSTEM"}</td>
           </tr>
         ))}
       </tbody>

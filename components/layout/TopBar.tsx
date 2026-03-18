@@ -2,32 +2,105 @@
 
 export function TopBar() {
   return (
-    <div className="shrink-0 bg-[#1a3a5c] text-white flex items-center justify-between px-0" style={{ height: 32 }}>
-      {/* Left: product identity */}
-      <div className="flex items-center gap-0">
-        <div className="flex items-center px-3 h-full bg-[#0f2a45] border-r border-[#2a4a6c]">
-          <span className="text-[11px] font-bold tracking-widest uppercase text-[#7ab0d8]">TRIMBLE</span>
+    <div
+      style={{
+        flexShrink: 0,
+        height: 34,
+        background: "var(--nav-bg)",
+        borderBottom: "1px solid var(--nav-border)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      {/* Left: identity + menu */}
+      <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
+        {/* Product name */}
+        <div
+          style={{
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            padding: "0 14px",
+            background: "var(--nav-bg-dark)",
+            borderRight: "1px solid var(--nav-border)",
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: "#93C5FD" }}>
+            TRIMBLE
+          </span>
+          <span style={{ fontSize: 10, color: "var(--nav-text-muted)", marginTop: 1 }}>
+            Construction Suite
+          </span>
         </div>
-        <div className="flex items-center px-3 h-full border-r border-[#2a4a6c]">
-          <span className="text-[11px] font-semibold text-white">Construction Suite</span>
-          <span className="ml-2 text-[10px] text-[#7ab0d8]">/ Change Order Pricing Module</span>
+
+        {/* Module label */}
+        <div
+          style={{
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            padding: "0 12px",
+            borderRight: "1px solid var(--nav-border)",
+          }}
+        >
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--nav-text)" }}>
+            Change Order Pricing
+          </span>
+          <span style={{ fontSize: 10, color: "var(--nav-text-muted)", marginLeft: 8 }}>
+            v3.2.1
+          </span>
         </div>
-        {/* Toolbar action buttons */}
-        <div className="flex items-center h-full border-r border-[#2a4a6c] px-2 gap-1">
-          <button className="btn-toolbar bg-[#1e4878] border-[#2a5a8c] text-[#b8d4f0] hover:bg-[#2a5a8c]">File</button>
-          <button className="btn-toolbar bg-[#1e4878] border-[#2a5a8c] text-[#b8d4f0] hover:bg-[#2a5a8c]">Edit</button>
-          <button className="btn-toolbar bg-[#1e4878] border-[#2a5a8c] text-[#b8d4f0] hover:bg-[#2a5a8c]">View</button>
-          <button className="btn-toolbar bg-[#1e4878] border-[#2a5a8c] text-[#b8d4f0] hover:bg-[#2a5a8c]">Tools</button>
-          <button className="btn-toolbar bg-[#1e4878] border-[#2a5a8c] text-[#b8d4f0] hover:bg-[#2a5a8c]">Reports</button>
-          <button className="btn-toolbar bg-[#1e4878] border-[#2a5a8c] text-[#b8d4f0] hover:bg-[#2a5a8c]">Help</button>
+
+        {/* Menu buttons */}
+        <div
+          style={{
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            padding: "0 6px",
+            borderRight: "1px solid var(--nav-border)",
+            gap: 2,
+          }}
+        >
+          {["File", "Edit", "View", "Tools", "Reports", "Help"].map((label) => (
+            <button
+              key={label}
+              style={{
+                background: "transparent",
+                border: "1px solid transparent",
+                color: "var(--nav-text)",
+                fontSize: 11,
+                padding: "2px 8px",
+                cursor: "pointer",
+                borderRadius: 2,
+                lineHeight: 1.5,
+              }}
+              onMouseEnter={(e) => {
+                (e.target as HTMLButtonElement).style.background = "var(--nav-hover-bg)";
+                (e.target as HTMLButtonElement).style.borderColor = "var(--nav-border)";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLButtonElement).style.background = "transparent";
+                (e.target as HTMLButtonElement).style.borderColor = "transparent";
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
+
       {/* Right: system info */}
-      <div className="flex items-center gap-4 px-3">
-        <span className="text-[10px] text-[#7ab0d8]">ENV: PROD-US-EAST</span>
-        <span className="text-[10px] text-[#7ab0d8]">DB: TRIMBLE-SQL-02</span>
-        <span className="text-[10px] text-[#c8d8e8]">zara.hall@contractor.trimble.com</span>
-        <div className="w-2 h-2 rounded-full bg-[#44bb44] border border-[#33aa33]" title="Connected" />
+      <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 12px" }}>
+        <span style={{ fontSize: 10, color: "var(--nav-text-muted)" }}>ENV: PROD-US-EAST</span>
+        <span style={{ fontSize: 10, color: "var(--nav-text-muted)" }}>DB: TRIMBLE-SQL-02</span>
+        <span style={{ fontSize: 11, color: "var(--nav-text)" }}>zara.hall@contractor.trimble.com</span>
+        <div
+          title="Connected"
+          style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ADE80", border: "1px solid #16A34A" }}
+        />
       </div>
     </div>
   );

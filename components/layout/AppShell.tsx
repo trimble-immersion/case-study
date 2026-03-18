@@ -5,13 +5,11 @@ import { TopBar } from "./TopBar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#dde2e8]">
-      {/* Top application bar */}
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg-app)" }}>
       <TopBar />
-      {/* Below top bar: left nav + main content */}
-      <div className="flex flex-1 min-h-0">
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         <LeftNav />
-        <div className="flex flex-1 flex-col min-w-0 min-h-0 overflow-hidden">
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden" }}>
           {children}
         </div>
       </div>

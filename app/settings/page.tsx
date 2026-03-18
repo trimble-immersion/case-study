@@ -1,111 +1,146 @@
-import { IntegrationService } from "@/lib/services/integrationService";
-import { DataPanel } from "@/components/domain/DataPanel";
-
 export default function SettingsPage() {
-  const connections = IntegrationService.listConnections();
+  const integrations = [
+    { name: "Oracle ERP / JDE",          status: "ONLINE",   lastSync: "06:00 UTC",   record: "PROD-ERP-01",      note: "Posting enabled" },
+    { name: "Trimble ProjectSight",       status: "ONLINE",   lastSync: "06:00 UTC",   record: "PS-TENANT-02",     note: "Read-write" },
+    { name: "Estimation MEP",             status: "OFFLINE",  lastSync: "Yesterday",   record: "—",                note: "Connection failed — manual entry required" },
+    { name: "Document Control (Newforma)", status: "ONLINE",  lastSync: "05:30 UTC",   record: "NEWFORMA-01",      note: "Read-only" },
+    { name: "Kafka / Service Bus",        status: "ONLINE",   lastSync: "—",           record: "sb-prod-eastus",   note: "Event publishing active" },
+  ];
+
+  const systemConfig = [
+    { key: "Labor Rate (Default)",        value: "$95.00/hr",    source: "Rate table" },
+    { key: "Equipment Markup",            value: "15%",          source: "Config table" },
+    { key: "Margin (Default)",            value: "12%",          source: "Config table" },
+    { key: "Cost Code Format",            value: "XX.XXX.XXX",   source: "Project config" },
+    { key: "Currency",                    value: "USD",          source: "System default" },
+    { key: "Timezone",                    value: "UTC",          source: "System" },
+  ];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Toolbar */}
-      <div className="shrink-0 border-b border-[#8a9aaa] bg-[#e4eaf0] px-2 flex items-center gap-1" style={{ height: 26 }}>
-        <span className="text-[11px] font-semibold text-[#1a2a3a] mr-2">INTEGRATIONS — System Connection Registry</span>
-        <span className="text-[#9aa8b6] mx-1">|</span>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      <div className="toolbar-strip">
+        <span className="toolbar-label">SYSTEM SETTINGS &amp; INTEGRATIONS</span>
+        <span style={{ flexGrow: 1 }} />
         <button className="btn-toolbar">Test All Connections</button>
-        <button className="btn-toolbar">Force Sync</button>
-        <button className="btn-toolbar">View Sync Logs</button>
+        <button className="btn-toolbar">Refresh Status</button>
+        <button className="btn-toolbar">Export Config</button>
       </div>
 
-      <div className="flex-1 overflow-auto p-2">
-        <DataPanel title="INTEGRATION CONNECTIONS — Adapter Status">
-          <table>
-            <thead>
-              <tr>
-                <th>System Type</th>
-                <th>Display Name</th>
-                <th>Adapter</th>
-                <th>Status</th>
-                <th>Last Sync</th>
-                <th>Sync Interval</th>
-                <th>Health</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {connections.map((c) => (
-                <tr key={c.id}>
-                  <td className="font-medium">{c.system}</td>
-                  <td>{c.displayName}</td>
-                  <td className="text-[#6a7e90]">{c.system.toLowerCase()}Adapter.ts</td>
-                  <td>
-                    {c.connected ? (
-                      <span style={{ color: "#1a5a1a", fontWeight: 600 }}>CONNECTED</span>
-                    ) : (
-                      <span className="error-cell font-semibold">OFFLINE</span>
-                    )}
-                  </td>
-                  <td className="text-[#4a5a6a]">
-                    {c.lastSync ? new Date(c.lastSync).toLocaleString() : <span className="text-[#9aa8b6]">Never</span>}
-                  </td>
-                  <td className="text-[#6a7e90]">
-                    {c.connected ? "15 min" : <span className="warn-cell">Manual only</span>}
-                  </td>
-                  <td>
-                    {c.connected ? (
-                      <span style={{ color: "#1a5a1a" }}>OK</span>
-                    ) : (
-                      <span className="error-cell">DEGRADED</span>
-                    )}
-                  </td>
-                  <td>
-                    <button className="btn-toolbar">
-                      {c.connected ? "Test" : "Reconnect"}
-                    </button>
-                  </td>
+      <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+        {/* Integration connections */}
+        <div className="panel">
+          <div className="panel-header">INTEGRATION CONNECTIONS</div>
+          <div style={{ padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>System</th>
+                  <th>Status</th>
+                  <th>Last Sync</th>
+                  <th>Record ID / Tenant</th>
+                  <th>Notes</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="mt-2 border border-[#b0bcc8] bg-[#f4f6f8] px-2 py-1 text-[10px] text-[#6a7e90]">
-            Adapters map internal domain models to external system formats.
-            See: erpAdapter.ts · estimatingAdapter.ts · projectSystemAdapter.ts
-            Integration architecture: event-driven (Kafka / Azure Service Bus).
-            Contact infrastructure team to modify connection parameters.
+              </thead>
+              <tbody>
+                {integrations.map((s) => (
+                  <tr key={s.name}>
+                    <td style={{ fontWeight: 500 }}>{s.name}</td>
+                    <td
+                      className={s.status === "ONLINE" ? "success-cell" : "error-cell"}
+                      style={{ fontWeight: 700, fontSize: 11 }}
+                    >
+                      {s.status}
+                    </td>
+                    <td style={{ color: "var(--text-secondary)" }}>{s.lastSync}</td>
+                    <td style={{ color: "var(--blue-muted)", fontSize: 11 }}>{s.record}</td>
+                    <td
+                      style={{ fontSize: 11 }}
+                      className={s.status === "OFFLINE" ? "warn-cell" : ""}
+                    >
+                      {s.note}
+                    </td>
+                    <td>
+                      <button className="btn-toolbar">
+                        {s.status === "ONLINE" ? "Test" : "Reconnect"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </DataPanel>
+        </div>
 
-        <DataPanel title="EVENT BUS — Domain Event Log (Recent)">
-          <div className="border border-[#c8a000] bg-[#fff8e0] px-2 py-1 text-[11px] text-[#7a5000] mb-2">
-            ⚠ Event log is in-memory only in current deployment. Configure Kafka broker endpoint to enable persistent event stream.
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Event Type</th>
-                <th>Aggregate</th>
-                <th>Description</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { type: "ChangeOrderCreated", agg: "CO-2024-012", desc: "New CO record created", status: "Published" },
-                { type: "PricingGenerated", agg: "CO-2024-012", desc: "Pricing recommendation generated", status: "Published" },
-                { type: "SubmittedForApproval", agg: "CO-2024-012", desc: "CO submitted for PM approval", status: "Published" },
-                { type: "Approved", agg: "CO-2024-012", desc: "CO approved – final $2,200", status: "Published" },
-                { type: "SyncedToERP", agg: "CO-2024-012", desc: "ERP sync triggered", status: "PENDING" },
-              ].map((ev, i) => (
-                <tr key={i}>
-                  <td className="font-medium">{ev.type}</td>
-                  <td className="text-[#4a7aaa]">{ev.agg}</td>
-                  <td>{ev.desc}</td>
-                  <td className={ev.status === "PENDING" ? "warn-cell font-semibold" : "text-[#4a7a4a]"}>
-                    {ev.status}
-                  </td>
+        {/* System config */}
+        <div className="panel">
+          <div className="panel-header">SYSTEM CONFIGURATION — Pricing Defaults</div>
+          <div style={{ padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Current Value</th>
+                  <th>Source</th>
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </DataPanel>
+              </thead>
+              <tbody>
+                {systemConfig.map((c) => (
+                  <tr key={c.key}>
+                    <td style={{ fontWeight: 500 }}>{c.key}</td>
+                    <td style={{ fontFamily: "monospace", fontWeight: 600 }}>{c.value}</td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: 11 }}>{c.source}</td>
+                    <td>
+                      <button className="btn-toolbar">Override</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Event log notice */}
+        <div className="panel">
+          <div className="panel-header">EVENT BUS — Recent Activity (Last 10 Events)</div>
+          <div style={{ padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Event Type</th>
+                  <th>Payload Summary</th>
+                  <th>Target System</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { ts: "06:02 UTC", type: "CO_APPROVED",    summary: "CO-1001 approved · $42,350",     target: "ERP, ProjectSight" },
+                  { ts: "06:01 UTC", type: "PRICING_GENERATED", summary: "CO-1003 pricing generated",   target: "Audit log" },
+                  { ts: "05:58 UTC", type: "CO_SUBMITTED",   summary: "CO-1004 submitted for review",   target: "Audit log" },
+                  { ts: "05:30 UTC", type: "SYNC_COMPLETED", summary: "Document sync completed — 12 records", target: "Newforma" },
+                ].map((e, i) => (
+                  <tr key={i}>
+                    <td style={{ color: "var(--text-secondary)", fontSize: 11 }}>{e.ts}</td>
+                    <td style={{ fontWeight: 600, fontSize: 11, color: "var(--blue)" }}>{e.type}</td>
+                    <td>{e.summary}</td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: 11 }}>{e.target}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div className="status-bar">
+        <span>Settings</span>
+        <span style={{ color: "var(--success-text)", fontWeight: 600 }}>ERP: ONLINE</span>
+        <span style={{ color: "var(--error-text)", fontWeight: 600 }}>Estimating MEP: OFFLINE</span>
+        <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>
+          Last config sync: 06:00 UTC
+        </span>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import type { Assumption } from "@/lib/domain/types";
 
 export function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] }) {
   if (!assumptions.length) {
-    return <p className="text-[11px] text-[#6a7e90]">No assumptions recorded.</p>;
+    return <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>No assumptions recorded.</p>;
   }
   return (
     <table>
@@ -19,8 +19,8 @@ export function AssumptionsPanel({ assumptions }: { assumptions: Assumption[] })
         {assumptions.map((a) => (
           <tr key={a.id}>
             <td>{a.description}</td>
-            <td className="text-[#6a7e90]">{a.source ?? "—"}</td>
-            <td className="text-[#4a7a4a]">Active</td>
+            <td style={{ color: "var(--text-secondary)" }}>{a.source ?? "—"}</td>
+            <td style={{ color: "var(--success-text)", fontWeight: 600, fontSize: 11 }}>ACTIVE</td>
           </tr>
         ))}
       </tbody>

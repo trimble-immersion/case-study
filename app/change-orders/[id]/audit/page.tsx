@@ -1,35 +1,35 @@
+import { notFound } from "next/navigation";
 import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { AuditService } from "@/lib/services/auditService";
-import { DataPanel } from "@/components/domain/DataPanel";
+import { ProjectService } from "@/lib/services/projectService";
 import { ActivityFeed } from "@/components/domain/ActivityFeed";
+import { ChangeOrderDetailLayout } from "../ChangeOrderDetailLayout";
 
-export default async function AuditPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const co = ChangeOrderService.getChangeOrderById(id);
-  if (!co) return null;
-  const activity = AuditService.getAuditTrail(id);
+export default function AuditPage({ params }: { params: { id: string } }) {
+  const co = ChangeOrderService.getChangeOrderById(params.id);
+  if (!co) return notFound();
+  const project = ProjectService.getProjectById(co.projectId) ?? null;
+  const records = AuditService.getAuditRecords(params.id);
 
   return (
-    <div>
-      <DataPanel
-        title="AUDIT LOG — Immutable Change History"
-        actions={
-          <>
-            <button className="btn-toolbar">Export Log</button>
-            <button className="btn-toolbar">Print</button>
-          </>
-        }
-      >
-        <div className="mb-1 text-[10px] text-[#6a7e90]">
-          Append-only record. {activity.length} event(s) logged for {co.changeOrderNumber}.
-          All timestamps in server UTC.
+    <ChangeOrderDetailLayout changeOrder={co} project={project}>
+      <div className="toolbar-strip" style={{ marginBottom: 8 }}>
+        <span className="toolbar-label">AUDIT LOG — Immutable Record</span>
+        <span className="toolbar-sep">|</span>
+        <button className="btn-toolbar">Export CSV</button>
+        <button className="btn-toolbar">Print</button>
+        <span className="toolbar-sep">|</span>
+        <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+          {records.length} event(s) recorded
+        </span>
+      </div>
+
+      <div className="panel">
+        <div className="panel-header">AUDIT LOG — {co.changeOrderNumber}</div>
+        <div style={{ padding: 0 }}>
+          <ActivityFeed events={records} />
         </div>
-        <ActivityFeed events={activity} />
-      </DataPanel>
-    </div>
+      </div>
+    </ChangeOrderDetailLayout>
   );
 }

@@ -1,143 +1,133 @@
+import { notFound } from "next/navigation";
 import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { PricingRecommendationService } from "@/lib/services/pricingRecommendationService";
-import { DataPanel } from "@/components/domain/DataPanel";
+import { ProjectService } from "@/lib/services/projectService";
 import { CostBreakdownTable } from "@/components/domain/CostBreakdownTable";
 import { ConfidenceBadge } from "@/components/domain/ConfidenceBadge";
+import { ChangeOrderDetailLayout } from "../ChangeOrderDetailLayout";
 import { PricingActions } from "./PricingActions";
 
-export default async function PricingPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const co = ChangeOrderService.getChangeOrderById(id);
-  if (!co) return null;
-  const rec = PricingRecommendationService.getCurrentRecommendation(id);
+export default function PricingPage({ params }: { params: { id: string } }) {
+  const co = ChangeOrderService.getChangeOrderById(params.id);
+  if (!co) return notFound();
+  const project = ProjectService.getProjectById(co.projectId) ?? null;
+  const rec = co.currentRecommendationId
+    ? PricingRecommendationService.getRecommendation(co.currentRecommendationId)
+    : null;
 
   return (
-    <div>
+    <ChangeOrderDetailLayout changeOrder={co} project={project}>
       {/* Toolbar */}
-      <div className="border border-[#8a9aaa] bg-[#e4eaf0] px-2 flex items-center gap-1 mb-2" style={{ height: 26 }}>
-        <PricingActions changeOrder={co} />
-        <span className="text-[#9aa8b6] mx-1">|</span>
+      <div className="toolbar-strip" style={{ marginBottom: 8 }}>
+        <span className="toolbar-label">PRICING</span>
+        <span className="toolbar-sep">|</span>
+        <PricingActions changeOrderId={params.id} hasRecommendation={!!rec} />
+        <span className="toolbar-sep">|</span>
         <button className="btn-toolbar">Recalculate</button>
-        <button className="btn-toolbar">Override Total</button>
+        <button className="btn-toolbar">Override Values</button>
         <button className="btn-toolbar">Export Estimate</button>
         {rec && (
-          <>
-            <span className="text-[#9aa8b6] mx-1">|</span>
-            <span className="text-[10px] text-[#6a7e90]">
-              Generated: {new Date(rec.createdAt).toLocaleString()} · {rec.createdBy ?? "SYSTEM"}
-            </span>
-            <span className="ml-2"><ConfidenceBadge confidence={rec.confidence} /></span>
-          </>
+          <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>
+            Generated: {new Date(rec.generatedAt).toLocaleString()} ·{" "}
+            <ConfidenceBadge confidence={rec.confidence} />
+          </span>
         )}
       </div>
 
       {!rec ? (
-        <div className="border border-[#c8a000] bg-[#fff8e0] px-3 py-2 mb-2">
-          <div className="text-[11px] font-semibold text-[#7a5000]">⚠ NO PRICING ESTIMATE ON RECORD</div>
-          <div className="text-[11px] text-[#7a5000] mt-0.5">
-            A pricing estimate has not been generated for this change order.
-            Click <strong>Generate Pricing</strong> in the toolbar above to run the pricing engine.
-            Manual override is also available.
+        <div className="panel" style={{ borderColor: "var(--warning-border)" }}>
+          <div className="panel-header" style={{ background: "var(--warning-bg)", color: "var(--warning-text)", borderBottomColor: "var(--warning-border)" }}>
+            ⚠ NO PRICING ESTIMATE ON RECORD
           </div>
-          <div className="text-[10px] text-[#9a7000] mt-1">
-            Note: Estimating MEP is currently offline. Values will be calculated using internal rate tables only.
+          <div className="panel-body">
+            <p style={{ fontSize: 12, color: "var(--warning-text)", margin: 0 }}>
+              No AI pricing estimate has been generated for this change order. Click{" "}
+              <strong>"Generate Pricing"</strong> to run the pricing engine. Verify scope and line items
+              before generating. Manual override is available after generation.
+            </p>
           </div>
         </div>
       ) : (
         <>
-          {/* Recommended value header */}
-          <DataPanel title="ESTIMATE VALUE — AI-Assisted Pricing Output">
-            <div className="flex items-start gap-6">
-              <div>
-                <div className="text-[10px] text-[#6a7e90] uppercase mb-0.5">Recommended Estimate Value</div>
-                <div className="text-[22px] font-bold text-[#1a2a3a]" style={{ fontFamily: "monospace" }}>
-                  ${rec.recommendedTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </div>
-                <div className="text-[10px] text-[#6a7e90] mt-0.5">System-generated · subject to PM review and override</div>
+          {/* Estimate summary */}
+          <div className="panel">
+            <div className="panel-header">ESTIMATE SUMMARY</div>
+            <div style={{ padding: 0 }}>
+              <table>
+                <tbody>
+                  <tr>
+                    <th style={{ width: 180 }}>Total Estimated Value</th>
+                    <td style={{ fontWeight: 700, fontFamily: "monospace", fontSize: 16 }}>
+                      ${rec.totalCost.toFixed(2)}
+                    </td>
+                    <th style={{ width: 180 }}>Confidence Level</th>
+                    <td><ConfidenceBadge confidence={rec.confidence} /></td>
+                  </tr>
+                  <tr>
+                    <th>Budget Impact</th>
+                    <td className={rec.impactOnBudget > 0 ? "warn-cell" : ""}>
+                      {rec.impactOnBudget > 0 ? `+$${rec.impactOnBudget.toFixed(2)}` : "—"}
+                    </td>
+                    <th>Revenue Impact</th>
+                    <td>{rec.impactOnRevenue > 0 ? `+$${rec.impactOnRevenue.toFixed(2)}` : "—"}</td>
+                  </tr>
+                  <tr>
+                    <th>Schedule Impact</th>
+                    <td>{rec.impactOnSchedule ?? "Not assessed"}</td>
+                    <th>Generated At</th>
+                    <td style={{ color: "var(--text-secondary)" }}>{new Date(rec.generatedAt).toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <th>Rationale</th>
+                    <td colSpan={3} style={{ color: "var(--text-secondary)", fontSize: 12 }}>{rec.rationale}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Cost breakdown */}
+          <div className="panel">
+            <div className="panel-header">COST BREAKDOWN — By Category</div>
+            <div style={{ padding: 0 }}>
+              <CostBreakdownTable breakdown={rec.breakdown} />
+            </div>
+          </div>
+
+          {/* Warnings / missing info */}
+          {(rec.warnings.length > 0 || rec.missingInfoFlags.length > 0) && (
+            <div className="panel" style={{ borderColor: "var(--warning-border)" }}>
+              <div className="panel-header" style={{ background: "var(--warning-bg)", color: "var(--warning-text)", borderBottomColor: "var(--warning-border)" }}>
+                WARNINGS &amp; MISSING DATA FLAGS
               </div>
-              <div className="border-l border-[#b0bcc8] pl-4">
-                <table style={{ minWidth: 240 }}>
+              <div style={{ padding: 0 }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Type</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    <tr>
-                      <td className="text-[#6a7e90]">Budget Impact</td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>${rec.budgetImpact.toFixed(2)}</td>
-                      <td className="text-[10px] warn-cell pl-2">↑ Increase</td>
-                    </tr>
-                    <tr>
-                      <td className="text-[#6a7e90]">Revenue Impact</td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>${rec.revenueImpact.toFixed(2)}</td>
-                      <td className="text-[10px] text-[#4a7a4a] pl-2">Billable</td>
-                    </tr>
-                    {rec.scheduleImpactDays != null && (
-                      <tr>
-                        <td className="text-[#6a7e90]">Schedule Impact</td>
-                        <td style={{ textAlign: "right", fontWeight: 600 }}>{rec.scheduleImpactDays} day(s)</td>
-                        <td className="text-[10px] warn-cell pl-2">⚠ Verify</td>
+                    {rec.warnings.map((w, i) => (
+                      <tr key={i}>
+                        <td className="warn-cell" style={{ fontWeight: 700, fontSize: 11 }}>WARNING</td>
+                        <td>{w}</td>
                       </tr>
-                    )}
-                    <tr>
-                      <td className="text-[#6a7e90]">Current Final Total</td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>${co.finalTotal.toFixed(2)}</td>
-                      <td className="text-[10px] text-[#6a7e90] pl-2">
-                        {co.finalTotal !== rec.recommendedTotal && (
-                          <span className="warn-cell">OVERRIDDEN</span>
-                        )}
-                      </td>
-                    </tr>
+                    ))}
+                    {rec.missingInfoFlags.map((f, i) => (
+                      <tr key={`f-${i}`}>
+                        <td className="error-cell" style={{ fontWeight: 700, fontSize: 11 }}>MISSING DATA</td>
+                        <td>{f}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
-          </DataPanel>
-
-          {/* Cost breakdown */}
-          <DataPanel title="COST BREAKDOWN — Basis of Estimate">
-            <CostBreakdownTable breakdown={rec.costBreakdown} />
-          </DataPanel>
-
-          {/* Basis of estimate */}
-          <DataPanel title="BASIS OF ESTIMATE — Rationale">
-            <div className="border border-[#b0bcc8] bg-[#f4f6f8] px-2 py-1 text-[11px] text-[#1a2a3a] mb-1">
-              {rec.rationale}
-            </div>
-          </DataPanel>
-
-          {/* Warnings and flags */}
-          {(rec.warnings.length > 0 || rec.missingInfoFlags.length > 0) && (
-            <DataPanel title="WARNINGS &amp; MISSING INFORMATION — Manual Review Required">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Message</th>
-                    <th>Action Required</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rec.warnings.map((w, i) => (
-                    <tr key={`w-${i}`}>
-                      <td className="warn-cell font-semibold">WARNING</td>
-                      <td className="warn-cell">{w}</td>
-                      <td className="text-[#6a7e90]">Review before submission</td>
-                    </tr>
-                  ))}
-                  {rec.missingInfoFlags.map((f, i) => (
-                    <tr key={`f-${i}`}>
-                      <td className="error-cell font-semibold">MISSING DATA</td>
-                      <td className="error-cell">{f}</td>
-                      <td className="text-[#6a7e90]">Manual input required</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </DataPanel>
           )}
         </>
       )}
-    </div>
+    </ChangeOrderDetailLayout>
   );
 }

@@ -2,14 +2,14 @@
 
 import type { PricingConfidence } from "@/lib/domain/types";
 
-const conf: Record<PricingConfidence, { bg: string; text: string; border: string }> = {
-  High:   { bg: "#e0f2e0", text: "#1a5a1a", border: "#4a9a4a" },
-  Medium: { bg: "#fff8e0", text: "#7a5000", border: "#c8a000" },
-  Low:    { bg: "#ffe0e0", text: "#7a0000", border: "#c04040" },
+const confConfig: Record<PricingConfidence, { bg: string; text: string; border: string }> = {
+  High:   { bg: "#F0FDF4", text: "#15803D", border: "#86EFAC" },
+  Medium: { bg: "#FFFBEB", text: "#B45309", border: "#FCD34D" },
+  Low:    { bg: "#FEF2F2", text: "#B91C1C", border: "#FCA5A5" },
 };
 
 export function ConfidenceBadge({ confidence }: { confidence: PricingConfidence }) {
-  const s = conf[confidence];
+  const s = confConfig[confidence];
   return (
     <span
       className="status-tag"

@@ -12,10 +12,14 @@ export function DataPanel({
   actions?: React.ReactNode;
 }) {
   return (
-    <section className={`panel mb-2 ${className}`}>
-      <div className="panel-header flex items-center justify-between">
+    <section className={`panel ${className}`}>
+      <div className="panel-header">
         <span>{title}</span>
-        {actions && <div className="flex items-center gap-1 normal-case tracking-normal font-normal">{actions}</div>}
+        {actions && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, fontWeight: "normal", textTransform: "none", letterSpacing: "normal" }}>
+            {actions}
+          </div>
+        )}
       </div>
       <div className="panel-body">{children}</div>
     </section>

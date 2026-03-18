@@ -14,15 +14,15 @@ const navGroups = [
     ],
   },
   {
-    group: "SYSTEMS",
+    group: "INTEGRATIONS",
     items: [
-      { href: "/settings", label: "Integrations" },
+      { href: "/settings", label: "System Connections" },
       { href: "/settings", label: "ERP Sync Status", warn: true },
       { href: "/settings", label: "Document Control" },
     ],
   },
   {
-    group: "ADMIN",
+    group: "CONFIGURATION",
     items: [
       { href: "/settings", label: "Cost Code Table" },
       { href: "/settings", label: "Labor Rate Table" },
@@ -37,19 +37,46 @@ export function LeftNav() {
 
   return (
     <nav
-      className="flex flex-col border-r border-[#0a2038] bg-[#1a3a5c] overflow-y-auto shrink-0"
-      style={{ width: 180, minWidth: 180 }}
+      style={{
+        width: 188,
+        minWidth: 188,
+        flexShrink: 0,
+        background: "var(--nav-bg)",
+        borderRight: "1px solid var(--nav-border)",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+      }}
     >
-      {/* Module header */}
-      <div className="border-b border-[#0a2038] bg-[#0f2a45] px-2 py-1.5">
-        <div className="text-[10px] font-bold tracking-widest uppercase text-[#7ab0d8]">CO PRICING</div>
-        <div className="text-[9px] text-[#4a7090] mt-0.5">v3.2.1 · Build 20240210</div>
+      {/* Module version chip */}
+      <div
+        style={{
+          padding: "6px 10px",
+          background: "var(--nav-bg-dark)",
+          borderBottom: "1px solid var(--nav-border)",
+        }}
+      >
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", color: "var(--nav-text-muted)", textTransform: "uppercase" }}>
+          CO Pricing Module
+        </div>
+        <div style={{ fontSize: 9, color: "var(--nav-text-muted)", marginTop: 1 }}>
+          Build 20240210 · PROD
+        </div>
       </div>
 
       {/* Nav groups */}
       {navGroups.map((group) => (
-        <div key={group.group} className="border-b border-[#0f2a45]">
-          <div className="px-2 py-1 text-[9px] font-bold tracking-widest uppercase text-[#4a7090]">
+        <div key={group.group} style={{ borderBottom: "1px solid var(--nav-border)" }}>
+          <div
+            style={{
+              padding: "5px 10px 3px",
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              color: "var(--nav-text-muted)",
+            }}
+          >
             {group.group}
           </div>
           {group.items.map((item) => {
@@ -60,15 +87,40 @@ export function LeftNav() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center justify-between px-3 py-1 text-[11px] border-b border-[#0f2a45] ${
-                  active
-                    ? "bg-[#2563a8] text-white font-semibold"
-                    : "text-[#a8c4dc] hover:bg-[#1e4878] hover:text-white"
-                }`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "4px 10px 4px 14px",
+                  fontSize: 12,
+                  fontWeight: active ? 600 : 400,
+                  color: active ? "#FFFFFF" : "var(--nav-text)",
+                  background: active ? "var(--nav-active-bg)" : "transparent",
+                  borderBottom: "1px solid var(--nav-border)",
+                  textDecoration: "none",
+                  transition: "background 0.1s",
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLAnchorElement).style.background = "var(--nav-hover-bg)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                }}
               >
                 <span>{item.label}</span>
                 {"warn" in item && item.warn && (
-                  <span className="text-[9px] bg-[#cc4400] text-white px-1">!</span>
+                  <span
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 700,
+                      background: "#B45309",
+                      color: "white",
+                      padding: "0 4px",
+                      borderRadius: 2,
+                    }}
+                  >
+                    !
+                  </span>
                 )}
               </Link>
             );
@@ -76,10 +128,10 @@ export function LeftNav() {
         </div>
       ))}
 
-      {/* Bottom status strip */}
-      <div className="mt-auto border-t border-[#0a2038] px-2 py-1">
-        <div className="text-[9px] text-[#4a7090]">Last sync: 06:00 UTC</div>
-        <div className="text-[9px] text-[#cc6600] mt-0.5">⚠ Estimating: offline</div>
+      {/* Bottom status */}
+      <div style={{ marginTop: "auto", padding: "6px 10px", borderTop: "1px solid var(--nav-border)" }}>
+        <div style={{ fontSize: 9, color: "var(--nav-text-muted)" }}>Last sync: 06:00 UTC</div>
+        <div style={{ fontSize: 9, color: "#B45309", marginTop: 2 }}>⚠ Estimating: offline</div>
       </div>
     </nav>
   );

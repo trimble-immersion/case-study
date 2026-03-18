@@ -1,82 +1,108 @@
+import { notFound } from "next/navigation";
 import { ChangeOrderService } from "@/lib/services/changeOrderService";
-import { ApprovalWorkflowService } from "@/lib/services/approvalWorkflowService";
-import { DataPanel } from "@/components/domain/DataPanel";
+import { AuditService } from "@/lib/services/auditService";
+import { ProjectService } from "@/lib/services/projectService";
 import { StatusBadge } from "@/components/domain/StatusBadge";
+import { ChangeOrderDetailLayout } from "../ChangeOrderDetailLayout";
 import { ApprovalForm } from "./ApprovalForm";
+import { DataPanel } from "@/components/domain/DataPanel";
 
-export default async function ApprovalPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const co = ChangeOrderService.getChangeOrderById(id);
-  if (!co) return null;
-  const steps = ApprovalWorkflowService.getApprovalSteps(id);
+export default function ApprovalPage({ params }: { params: { id: string } }) {
+  const co = ChangeOrderService.getChangeOrderById(params.id);
+  if (!co) return notFound();
+  const project = ProjectService.getProjectById(co.projectId) ?? null;
+  const history = AuditService.getAuditRecords(params.id);
+  const approvalHistory = history.filter((e) => e.eventType.toLowerCase().includes("approv") || e.eventType.toLowerCase().includes("reject"));
 
   return (
-    <div>
-      {/* Status header */}
-      <DataPanel title="APPROVAL STATUS — Current Workflow State">
-        <table>
-          <tbody>
-            <tr>
-              <td className="text-[#6a7e90] font-medium">Current Status</td>
-              <td><StatusBadge status={co.status} /></td>
-              <td className="text-[#6a7e90] font-medium pl-4">Date Submitted</td>
-              <td>{co.dateSubmitted ? new Date(co.dateSubmitted).toLocaleString() : <span className="text-[#9aa8b6]">Not submitted</span>}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Final Total</td>
-              <td className="font-semibold">${co.finalTotal.toFixed(2)}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Requester</td>
-              <td>{co.requester ?? "—"}</td>
-            </tr>
-          </tbody>
-        </table>
-        {co.status === "Draft" && (
-          <div className="mt-1 border border-[#c8a000] bg-[#fff8e0] px-2 py-1 text-[11px] text-[#7a5000]">
-            ⚠ Record is in DRAFT status. Submit for approval from the Pricing tab after generating a pricing estimate.
-          </div>
-        )}
-      </DataPanel>
+    <ChangeOrderDetailLayout changeOrder={co} project={project}>
+      <div className="toolbar-strip" style={{ marginBottom: 8 }}>
+        <span className="toolbar-label">APPROVAL WORKFLOW</span>
+        <span className="toolbar-sep">|</span>
+        <button className="btn-toolbar">Print Approval Form</button>
+        <button className="btn-toolbar">Export</button>
+      </div>
 
-      {/* Approval history */}
-      <DataPanel title="APPROVAL HISTORY — Workflow Steps">
-        {steps.length === 0 ? (
-          <div className="text-[11px] text-[#6a7e90]">No approval steps on record.</div>
-        ) : (
+      {/* Current status */}
+      <div className="panel">
+        <div className="panel-header">CURRENT STATUS</div>
+        <div style={{ padding: 0 }}>
           <table>
-            <thead>
-              <tr>
-                <th>Seq.</th>
-                <th>Status</th>
-                <th>Approved / Rejected By</th>
-                <th>Date</th>
-                <th>Comment</th>
-                <th>Delta (Final vs. Est.)</th>
-              </tr>
-            </thead>
             <tbody>
-              {steps.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.sequence}</td>
-                  <td><StatusBadge status={s.status} /></td>
-                  <td>{s.approvedBy ?? <span className="text-[#9aa8b6]">Pending</span>}</td>
-                  <td className="whitespace-nowrap">
-                    {s.approvedAt ? new Date(s.approvedAt).toLocaleString() : <span className="text-[#9aa8b6]">—</span>}
-                  </td>
-                  <td>{s.comment ?? <span className="text-[#9aa8b6]">—</span>}</td>
-                  <td className="text-[#6a7e90]">—</td>
-                </tr>
-              ))}
+              <tr>
+                <th style={{ width: 180 }}>Approval Status</th>
+                <td><StatusBadge status={co.status} /></td>
+                <th style={{ width: 180 }}>Date Submitted</th>
+                <td style={{ color: "var(--text-secondary)" }}>
+                  {co.dateSubmitted ? new Date(co.dateSubmitted).toLocaleDateString() : "Not submitted"}
+                </td>
+              </tr>
+              <tr>
+                <th>Recommended Total</th>
+                <td style={{ fontWeight: 600, fontFamily: "monospace" }} className={co.recommendedTotal === 0 ? "warn-cell" : ""}>
+                  {co.recommendedTotal > 0 ? `$${co.recommendedTotal.toFixed(2)}` : "NOT PRICED"}
+                </td>
+                <th>Final Approved Total</th>
+                <td style={{ fontWeight: 600, fontFamily: "monospace" }}>
+                  {co.finalTotal > 0 ? `$${co.finalTotal.toFixed(2)}` : "—"}
+                </td>
+              </tr>
+              <tr>
+                <th>Requester</th>
+                <td>{co.requester ?? "—"}</td>
+                <th>Date Approved</th>
+                <td style={{ color: "var(--text-secondary)" }}>
+                  {"—"}
+                </td>
+              </tr>
             </tbody>
           </table>
-        )}
-      </DataPanel>
+        </div>
+      </div>
 
       {/* Approval form */}
-      <DataPanel title="APPROVAL ACTION — PM Review and Decision">
-        <ApprovalForm changeOrder={co} />
-      </DataPanel>
-    </div>
+      {["Priced", "In Review", "Pending Approval"].includes(co.status) && (
+        <DataPanel title="APPROVAL ACTION">
+          <ApprovalForm changeOrderId={params.id} recommendedTotal={co.recommendedTotal} />
+        </DataPanel>
+      )}
+
+      {/* Approval history */}
+      <div className="panel">
+        <div className="panel-header">APPROVAL HISTORY</div>
+        <div style={{ padding: 0 }}>
+          {approvalHistory.length === 0 ? (
+            <div style={{ padding: 8, fontSize: 12, color: "var(--text-secondary)" }}>No approval actions recorded.</div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Event</th>
+                  <th>Approved By</th>
+                  <th>Date</th>
+                  <th>Comment</th>
+                  <th style={{ textAlign: "right" }}>Final vs. Est. ($)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {approvalHistory.map((r, i) => (
+                  <tr key={r.id}>
+                    <td style={{ color: "var(--text-muted)" }}>{i + 1}</td>
+                    <td style={{ fontWeight: 500 }}>{r.eventType}</td>
+                    <td>{r.userName ?? "—"}</td>
+                    <td style={{ color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                      {new Date(r.timestamp).toLocaleDateString()}
+                    </td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: 11 }}>{r.description}</td>
+                    <td style={{ textAlign: "right" }}>—</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </ChangeOrderDetailLayout>
   );
 }

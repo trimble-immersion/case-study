@@ -1,144 +1,135 @@
+import { notFound } from "next/navigation";
 import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { ProjectService } from "@/lib/services/projectService";
-import { DataPanel } from "@/components/domain/DataPanel";
 import { StatusBadge } from "@/components/domain/StatusBadge";
+import { ChangeOrderDetailLayout } from "./ChangeOrderDetailLayout";
 
-export default async function ChangeOrderOverviewPage({
+export default function ChangeOrderOverviewPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
-  const co = ChangeOrderService.getChangeOrderById(id);
-  const project = co ? ProjectService.getProjectById(co.projectId) : null;
-  if (!co) return null;
+  const co = ChangeOrderService.getChangeOrderById(params.id);
+  if (!co) return notFound();
+  const project = ProjectService.getProjectById(co.projectId) ?? null;
 
   return (
-    <div>
-      {/* Record header fields */}
-      <DataPanel title="RECORD HEADER — Change Order Master Data">
-        <table>
-          <tbody>
-            <tr>
-              <td className="text-[#6a7e90] font-medium w-36">CO Number</td>
-              <td className="font-bold">{co.changeOrderNumber}</td>
-              <td className="text-[#6a7e90] font-medium w-36 pl-4">Status</td>
-              <td><StatusBadge status={co.status} /></td>
-              <td className="text-[#6a7e90] font-medium w-36 pl-4">Record ID</td>
-              <td className="text-[10px] text-[#6a7e90]">{co.id}</td>
-            </tr>
-            <tr>
-              <td className="text-[#6a7e90] font-medium">Title</td>
-              <td colSpan={3}>{co.title}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Cost Code</td>
-              <td className={!co.costCode ? "warn-cell" : ""}>{co.costCode ?? <span className="text-[#cc4400]">NOT ASSIGNED</span>}</td>
-            </tr>
-            <tr>
-              <td className="text-[#6a7e90] font-medium">Requester</td>
-              <td>{co.requester ?? "—"}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Date Submitted</td>
-              <td>{co.dateSubmitted ? new Date(co.dateSubmitted).toLocaleString() : <span className="text-[#9aa8b6]">—</span>}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Created By</td>
-              <td>{co.createdBy ?? "—"}</td>
-            </tr>
-            <tr>
-              <td className="text-[#6a7e90] font-medium">Created</td>
-              <td>{new Date(co.createdAt).toLocaleString()}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Last Modified</td>
-              <td>{new Date(co.updatedAt).toLocaleString()}</td>
-              <td className="text-[#6a7e90] font-medium pl-4">Modified By</td>
-              <td>{co.modifiedBy ?? <span className="text-[#9aa8b6]">—</span>}</td>
-            </tr>
-          </tbody>
-        </table>
-      </DataPanel>
+    <ChangeOrderDetailLayout changeOrder={co} project={project}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {/* Record header */}
+        <div className="panel" style={{ gridColumn: "1 / -1" }}>
+          <div className="panel-header">RECORD HEADER — Change Order Identification</div>
+          <div style={{ padding: 0 }}>
+            <table>
+              <tbody>
+                <tr>
+                  <th style={{ width: 140 }}>CO Number</th>
+                  <td style={{ fontWeight: 600 }}>{co.changeOrderNumber}</td>
+                  <th style={{ width: 140 }}>Status</th>
+                  <td><StatusBadge status={co.status} /></td>
+                  <th style={{ width: 140 }}>Record Type</th>
+                  <td>{co.changeType ?? "Change Order"}</td>
+                </tr>
+                <tr>
+                  <th>Title</th>
+                  <td colSpan={3} style={{ fontWeight: 500 }}>{co.title}</td>
+                  <th>Priority</th>
+                  <td className={!co.priority ? "warn-cell" : ""}>{co.priority ?? "NOT SET"}</td>
+                </tr>
+                <tr>
+                  <th>Cost Code</th>
+                  <td className={!co.costCode ? "warn-cell" : ""}>{co.costCode ?? "MISSING — manual entry required"}</td>
+                  <th>Requester</th>
+                  <td>{co.requester ?? "—"}</td>
+                  <th>Date Created</th>
+                  <td style={{ color: "var(--text-secondary)" }}>{new Date(co.createdAt).toLocaleDateString()}</td>
+                </tr>
+                <tr>
+                  <th>Description</th>
+                  <td colSpan={5} style={{ color: "var(--text-secondary)" }}>{co.description || "No description provided."}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      {/* Scope description */}
-      <DataPanel title="SCOPE DESCRIPTION">
-        <div className="border border-[#b0bcc8] bg-[#f4f6f8] px-2 py-1 text-[11px]">{co.description}</div>
-      </DataPanel>
+        {/* Financial summary */}
+        <div className="panel">
+          <div className="panel-header">FINANCIAL SUMMARY</div>
+          <div style={{ padding: 0 }}>
+            <table>
+              <tbody>
+                <tr>
+                  <th>Recommended Total</th>
+                  <td style={{ textAlign: "right", fontWeight: 600, fontFamily: "monospace" }} className={co.recommendedTotal === 0 ? "warn-cell" : ""}>
+                    {co.recommendedTotal > 0 ? `$${co.recommendedTotal.toFixed(2)}` : "NOT PRICED"}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Final Approved Total</th>
+                  <td style={{ textAlign: "right", fontWeight: 600, fontFamily: "monospace" }}>
+                    {co.finalTotal > 0 ? `$${co.finalTotal.toFixed(2)}` : "—"}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Date Submitted</th>
+                  <td style={{ color: "var(--text-secondary)" }}>
+                    {co.dateSubmitted ? new Date(co.dateSubmitted).toLocaleDateString() : "Not submitted"}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Date Approved</th>
+                  <td style={{ color: "var(--text-secondary)" }}>
+                    {"—"}
+                  </td>
+                </tr>
+                <tr>
+                  <th>Current Rec. ID</th>
+                  <td style={{ fontSize: 11, color: "var(--text-muted)" }}>{co.currentRecommendationId ?? "—"}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      {/* Financial summary */}
-      <DataPanel title="FINANCIAL SUMMARY — Estimate vs. Final">
-        <table>
-          <thead>
-            <tr>
-              <th>Field</th>
-              <th style={{ textAlign: "right" }}>Value ($)</th>
-              <th>Status</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="font-medium">Labor Input (hrs)</td>
-              <td style={{ textAlign: "right" }}>{co.laborHours} hrs</td>
-              <td className="warn-cell">Manual</td>
-              <td className="text-[#6a7e90]">@ $85.00/hr standard rate</td>
-            </tr>
-            <tr>
-              <td className="font-medium">Material</td>
-              <td style={{ textAlign: "right" }}>{co.materialTotal.toFixed(2)}</td>
-              <td className="warn-cell">Manual</td>
-              <td className="text-[#6a7e90]">Verify against PO</td>
-            </tr>
-            <tr>
-              <td className="font-medium">Equipment</td>
-              <td style={{ textAlign: "right" }}>{co.equipmentTotal.toFixed(2)}</td>
-              <td className="warn-cell">Manual</td>
-              <td className="text-[#6a7e90]">+15% markup applied</td>
-            </tr>
-            <tr>
-              <td className="font-medium">Subcontractor</td>
-              <td style={{ textAlign: "right" }}>{co.subcontractorTotal.toFixed(2)}</td>
-              <td className="text-[#6a7e90]">—</td>
-              <td className="text-[#6a7e90]">—</td>
-            </tr>
-            <tr style={{ backgroundColor: "#e4eaf0" }}>
-              <td className="font-semibold">Recommended Estimate</td>
-              <td style={{ textAlign: "right", fontWeight: 600 }}>{co.recommendedTotal.toFixed(2)}</td>
-              <td>{co.currentRecommendationId ? <span className="text-[#4a7a4a]">Generated</span> : <span className="warn-cell">NOT PRICED</span>}</td>
-              <td className="text-[#6a7e90]">AI-assisted pricing output</td>
-            </tr>
-            <tr style={{ backgroundColor: "#1a3a5c" }}>
-              <td style={{ color: "white", fontWeight: 700, border: "1px solid #0a2038" }}>Final Approved Total</td>
-              <td style={{ textAlign: "right", color: "white", fontWeight: 700, border: "1px solid #0a2038" }}>{co.finalTotal.toFixed(2)}</td>
-              <td style={{ border: "1px solid #0a2038" }}>
-                {co.status === "Approved" ? <span style={{ color: "#88dd88", fontWeight: 600 }}>APPROVED</span> : <span style={{ color: "#ffcc88" }}>PENDING</span>}
-              </td>
-              <td style={{ color: "#9ab8d0", border: "1px solid #0a2038" }}>Record in workflow</td>
-            </tr>
-          </tbody>
-        </table>
-      </DataPanel>
+        {/* Project linkage */}
+        <div className="panel">
+          <div className="panel-header">PROJECT LINKAGE</div>
+          <div style={{ padding: 0 }}>
+            {project ? (
+              <table>
+                <tbody>
+                  <tr><th>Project Number</th><td style={{ fontWeight: 600 }}>{project.projectNumber}</td></tr>
+                  <tr><th>Name</th><td>{project.name}</td></tr>
+                  <tr><th>Owner</th><td>{project.owner}</td></tr>
+                  <tr><th>Contract Value</th><td style={{ fontFamily: "monospace" }}>${project.contractValue.toLocaleString()}</td></tr>
+                  <tr>
+                    <th>ERP Record ID</th>
+                    <td style={{ color: "var(--blue-muted)", fontSize: 11 }}>{project.linkedProjectRecordId ?? "Not linked"}</td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              <p className="notice-warn" style={{ margin: 8 }}>No project linked to this change order.</p>
+            )}
+          </div>
+        </div>
 
-      {/* Project linkage */}
-      {project && (
-        <DataPanel title="LINKED PROJECT RECORD">
-          <table>
-            <tbody>
-              <tr>
-                <td className="text-[#6a7e90] font-medium w-36">Project Number</td>
-                <td>{project.projectNumber}</td>
-                <td className="text-[#6a7e90] font-medium pl-4 w-36">Project Name</td>
-                <td>{project.name}</td>
-              </tr>
-              <tr>
-                <td className="text-[#6a7e90] font-medium">Owner</td>
-                <td>{project.owner}</td>
-                <td className="text-[#6a7e90] font-medium pl-4">Contract Value</td>
-                <td>${project.contractValue.toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td className="text-[#6a7e90] font-medium">ERP Record ID</td>
-                <td className="text-[#4a7aaa]">{project.linkedProjectRecordId ?? "—"}</td>
-                <td className="text-[#6a7e90] font-medium pl-4">ERP Sync Status</td>
-                <td className="text-[#cc6600]">PENDING SYNC</td>
-              </tr>
-            </tbody>
-          </table>
-        </DataPanel>
-      )}
-    </div>
+        {/* Warnings */}
+        {(!co.costCode || co.recommendedTotal === 0) && (
+          <div className="panel" style={{ gridColumn: "1 / -1", borderColor: "var(--warning-border)" }}>
+            <div className="panel-header" style={{ background: "var(--warning-bg)", color: "var(--warning-text)", borderBottomColor: "var(--warning-border)" }}>
+              DATA QUALITY WARNINGS
+            </div>
+            <div className="panel-body">
+              <ul style={{ margin: 0, padding: "0 0 0 16px", color: "var(--warning-text)", fontSize: 12 }}>
+                {!co.costCode && <li>Cost Code is missing — must be assigned before approval.</li>}
+                {co.recommendedTotal === 0 && <li>No pricing estimate on record — generate pricing before submitting for approval.</li>}
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+    </ChangeOrderDetailLayout>
   );
 }

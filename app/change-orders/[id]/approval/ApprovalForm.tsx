@@ -2,27 +2,32 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ChangeOrder } from "@/lib/domain/types";
 
-export function ApprovalForm({ changeOrder }: { changeOrder: ChangeOrder }) {
+export function ApprovalForm({
+  changeOrderId,
+  recommendedTotal,
+}: {
+  changeOrderId: string;
+  recommendedTotal: number;
+}) {
   const router = useRouter();
-  const [finalTotal, setFinalTotal] = useState(String(changeOrder.finalTotal));
+  const [finalTotal, setFinalTotal] = useState(String(recommendedTotal));
   const [approvedBy, setApprovedBy] = useState("");
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const canApprove = changeOrder.status === "Pending Approval";
+  const isOverride = parseFloat(finalTotal) !== recommendedTotal;
 
   async function handleApprove(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     const value = parseFloat(finalTotal);
     if (isNaN(value) || value < 0) { setError("ERR: Invalid final total."); return; }
-    if (!approvedBy.trim()) { setError("ERR: Approver name required."); return; }
+    if (!approvedBy.trim()) { setError("ERR: Approver name / ID is required."); return; }
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/change-orders/${changeOrder.id}/approve`, {
+      const res = await fetch(`/api/change-orders/${changeOrderId}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ approvedBy: approvedBy.trim(), finalTotal: value, comment: comment.trim() || undefined }),
@@ -36,80 +41,76 @@ export function ApprovalForm({ changeOrder }: { changeOrder: ChangeOrder }) {
     }
   }
 
-  if (!canApprove) {
-    return (
-      <div className="text-[11px] text-[#6a7e90]">
-        Record is not in Pending Approval state. No action available.
-        {changeOrder.status === "Approved" && (
-          <span className="ml-2 text-[#4a7a4a] font-semibold">✓ Already approved.</span>
-        )}
-      </div>
-    );
-  }
-
   return (
     <form onSubmit={handleApprove}>
       <table style={{ marginBottom: 8 }}>
         <tbody>
           <tr>
-            <td className="text-[#6a7e90] font-medium whitespace-nowrap pr-3">Final Approved Amount ($)</td>
-            <td>
+            <td className="field-label" style={{ whiteSpace: "nowrap", paddingRight: 12, paddingBottom: 4 }}>
+              Final Approved Amount ($)
+            </td>
+            <td style={{ paddingBottom: 4 }}>
               <input
                 type="number"
                 min={0}
                 step={0.01}
                 value={finalTotal}
                 onChange={(e) => setFinalTotal(e.target.value)}
-                className="w-32"
+                style={{ width: 120 }}
                 required
               />
             </td>
-            <td className="text-[10px] warn-cell pl-3">
-              {parseFloat(finalTotal) !== changeOrder.recommendedTotal && "OVERRIDE — differs from estimate"}
+            <td className={isOverride ? "warn-cell" : ""} style={{ paddingLeft: 10, fontSize: 10, fontWeight: 700 }}>
+              {isOverride ? "OVERRIDE — differs from recommended estimate" : ""}
             </td>
           </tr>
           <tr>
-            <td className="text-[#6a7e90] font-medium whitespace-nowrap pr-3">Approver Name / ID</td>
-            <td>
+            <td className="field-label" style={{ whiteSpace: "nowrap", paddingRight: 12, paddingBottom: 4 }}>
+              Approver Name / ID
+            </td>
+            <td style={{ paddingBottom: 4 }}>
               <input
                 type="text"
                 value={approvedBy}
                 onChange={(e) => setApprovedBy(e.target.value)}
-                placeholder="Last, First"
-                className="w-48"
+                placeholder="Last, First / Employee ID"
+                style={{ width: 200 }}
                 required
               />
             </td>
-            <td className="text-[10px] text-[#6a7e90] pl-3">Enter as shown in directory</td>
+            <td style={{ paddingLeft: 10, fontSize: 10, color: "var(--text-muted)" }}>
+              Enter as shown in directory
+            </td>
           </tr>
           <tr>
-            <td className="text-[#6a7e90] font-medium whitespace-nowrap pr-3">Approval Comment</td>
+            <td className="field-label" style={{ whiteSpace: "nowrap", paddingRight: 12 }}>
+              Approval Comment
+            </td>
             <td colSpan={2}>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={2}
-                className="w-full"
-                style={{ width: 360 }}
-                placeholder="Optional — will be recorded in audit log"
+                style={{ width: 400 }}
+                placeholder="Optional — will be recorded in the audit log"
               />
             </td>
           </tr>
         </tbody>
       </table>
+
       {error && (
-        <div className="mb-2 border border-[#c04040] bg-[#ffe0e0] px-2 py-1 text-[11px] text-[#900000]">
-          {error}
-        </div>
+        <div className="notice-error" style={{ marginBottom: 8 }}>{error}</div>
       )}
-      <div className="flex gap-2 items-center">
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
         <button type="submit" disabled={submitting} className="btn-primary">
-          {submitting ? "Processing…" : "Approve — Record Final Amount"}
+          {submitting ? "Processing..." : "Approve — Record Final Amount"}
         </button>
         <button type="button" className="btn-secondary">Reject</button>
         <button type="button" className="btn-secondary">Request Revision</button>
-        <span className="text-[10px] text-[#6a7e90] ml-2">
-          Action will be logged to audit trail and trigger ERP sync.
+        <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>
+          Action will be recorded in audit trail and trigger ERP sync.
         </span>
       </div>
     </form>

@@ -3,144 +3,134 @@ import { ChangeOrderService } from "@/lib/services/changeOrderService";
 import { ProjectService } from "@/lib/services/projectService";
 import { StatusBadge } from "@/components/domain/StatusBadge";
 
-export default function ChangeOrdersListPage() {
-  const changeOrders = ChangeOrderService.listChangeOrders();
+export default function ChangeOrderRegisterPage() {
   const projects = ProjectService.listProjects();
-  const projectMap = Object.fromEntries(projects.map((p) => [p.id, p]));
+  const changeOrders = ChangeOrderService.listChangeOrders();
+  const drafts = changeOrders.filter((c) => c.status === "Draft").length;
+  const unpricedCount = changeOrders.filter((c) => c.recommendedTotal === 0).length;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
       {/* Toolbar */}
-      <div className="shrink-0 border-b border-[#8a9aaa] bg-[#e4eaf0] px-2 flex items-center gap-1" style={{ height: 26 }}>
-        <span className="text-[11px] font-semibold text-[#1a2a3a] mr-2">CHANGE ORDER REGISTER</span>
-        <span className="text-[#9aa8b6] mx-1">|</span>
-        <Link href="/intake" className="btn-toolbar">New Record</Link>
-        <button className="btn-toolbar">Refresh</button>
+      <div className="toolbar-strip">
+        <span className="toolbar-label">CHANGE ORDER REGISTER</span>
+        <span className="toolbar-sep">|</span>
+        <Link href="/intake" className="btn-primary" style={{ textDecoration: "none" }}>+ New CO</Link>
+        <button className="btn-toolbar">Filter</button>
+        <button className="btn-toolbar">Sort</button>
         <button className="btn-toolbar">Export CSV</button>
-        <button className="btn-toolbar">Print Register</button>
-        <span className="text-[#9aa8b6] mx-1">|</span>
-        <select className="text-[11px] border border-[#a0aab4] bg-white px-1 py-0" style={{ height: 20 }}>
-          <option>All Projects</option>
-          {projects.map((p) => <option key={p.id}>{p.projectNumber}</option>)}
-        </select>
-        <select className="text-[11px] border border-[#a0aab4] bg-white px-1 py-0 ml-1" style={{ height: 20 }}>
-          <option>All Statuses</option>
-          <option>Draft</option>
-          <option>In Review</option>
-          <option>Priced</option>
-          <option>Pending Approval</option>
-          <option>Approved</option>
-        </select>
-        <span className="ml-auto text-[10px] text-[#6a7e90]">
-          {changeOrders.length} record(s) · last refreshed: {new Date().toLocaleTimeString()}
+        <button className="btn-toolbar">Print</button>
+        <span className="toolbar-sep">|</span>
+        <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>
+          {changeOrders.length} records · {drafts} draft(s) · {unpricedCount} unpriced
         </span>
       </div>
 
-      {/* Warning bar */}
-      <div className="shrink-0 border-b border-[#c8a000] bg-[#fff8e0] px-2 py-0.5 flex items-center gap-3">
-        <span className="text-[10px] font-semibold text-[#7a5000]">⚠ SYSTEM NOTICES:</span>
-        <span className="text-[10px] text-[#7a5000]">
-          {changeOrders.filter(c => c.status === "Draft").length} record(s) in Draft — pricing not generated
-        </span>
-        <span className="text-[10px] text-[#4a6a4a]">·</span>
-        <span className="text-[10px] text-[#7a5000]">
-          Estimating MEP offline — manual entry required for new records
-        </span>
-        <span className="text-[10px] text-[#4a6a4a]">·</span>
-        <span className="text-[10px] text-[#005a00]">
-          {changeOrders.filter(c => c.status === "Approved").length} record(s) approved · pending ERP sync
-        </span>
-      </div>
+      {/* Warning banner */}
+      {(drafts > 0 || unpricedCount > 0) && (
+        <div className="notice-warn" style={{ margin: "6px 10px 0" }}>
+          <strong>REGISTER NOTICES: </strong>
+          {drafts > 0 && <span>{drafts} record(s) in DRAFT — not yet submitted for review. </span>}
+          {unpricedCount > 0 && <span>{unpricedCount} record(s) have no AI pricing estimate — manual pricing required. </span>}
+          <span>ERP sync incomplete — Pending approval records not yet posted. </span>
+        </div>
+      )}
 
-      {/* Table */}
-      <div className="flex-1 overflow-auto p-2">
-        <table>
-          <thead>
-            <tr>
-              <th style={{ width: 24 }}>#</th>
-              <th>CO Number</th>
-              <th>Project</th>
-              <th>Title</th>
-              <th>Cost Code</th>
-              <th>Requester</th>
-              <th>Status</th>
-              <th style={{ textAlign: "right" }}>Labor (hrs)</th>
-              <th style={{ textAlign: "right" }}>Material ($)</th>
-              <th style={{ textAlign: "right" }}>Equipment ($)</th>
-              <th style={{ textAlign: "right" }}>Sub ($)</th>
-              <th style={{ textAlign: "right" }}>Est. Value ($)</th>
-              <th style={{ textAlign: "right" }}>Final ($)</th>
-              <th>Date Submitted</th>
-              <th>ERP Sync</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {changeOrders.map((co, i) => {
-              const project = projectMap[co.projectId];
-              const missingCostCode = !co.costCode;
-              const hasPricing = co.recommendedTotal > 0;
-              return (
-                <tr key={co.id}>
-                  <td className="text-[#6a7e90]">{i + 1}</td>
-                  <td className="font-medium text-[#1a3a7a]">{co.changeOrderNumber}</td>
-                  <td className="text-[#4a5a6a]">{project?.projectNumber ?? "—"}</td>
-                  <td style={{ maxWidth: 200 }}>
-                    <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {co.title}
-                    </div>
-                  </td>
-                  <td className={missingCostCode ? "warn-cell" : ""}>
-                    {co.costCode ?? <span className="text-[#cc4400]">MISSING</span>}
-                  </td>
-                  <td>{co.requester ?? "—"}</td>
-                  <td><StatusBadge status={co.status} /></td>
-                  <td style={{ textAlign: "right" }}>{co.laborHours}</td>
-                  <td style={{ textAlign: "right" }}>{co.materialTotal.toFixed(2)}</td>
-                  <td style={{ textAlign: "right" }}>{co.equipmentTotal.toFixed(2)}</td>
-                  <td style={{ textAlign: "right" }}>
-                    {co.subcontractorTotal > 0 ? co.subcontractorTotal.toFixed(2) : <span className="text-[#9aa8b6]">—</span>}
-                  </td>
-                  <td style={{ textAlign: "right" }} className={!hasPricing ? "warn-cell" : "font-medium"}>
-                    {hasPricing ? co.recommendedTotal.toFixed(2) : <span>NOT PRICED</span>}
-                  </td>
-                  <td style={{ textAlign: "right", fontWeight: 600 }}>
-                    {co.finalTotal > 0 ? co.finalTotal.toFixed(2) : <span className="text-[#9aa8b6]">—</span>}
-                  </td>
-                  <td className="text-[#4a5a6a] whitespace-nowrap">
-                    {co.dateSubmitted ? new Date(co.dateSubmitted).toLocaleDateString() : <span className="text-[#9aa8b6]">—</span>}
-                  </td>
-                  <td>
-                    {co.status === "Approved" ? (
-                      <span className="text-[10px] text-[#cc6600]">PENDING SYNC</span>
-                    ) : (
-                      <span className="text-[#9aa8b6] text-[10px]">—</span>
-                    )}
-                  </td>
-                  <td>
-                    <Link
-                      href={`/change-orders/${co.id}`}
-                      className="text-[11px] text-[#1a4a7a] underline hover:text-[#1a3a5c]"
-                    >
-                      Open
-                    </Link>
-                  </td>
+      <div style={{ flex: 1, overflowY: "auto", padding: "6px 10px 10px" }}>
+        <div className="panel">
+          <div className="panel-header" style={{ justifyContent: "flex-start", gap: 12 }}>
+            <span>CHANGE ORDERS</span>
+            <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 400, textTransform: "none", letterSpacing: "normal" }}>
+              Filter: ALL STATUS · ALL PROJECTS · Current Period
+            </span>
+          </div>
+          <div style={{ padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>CO Number</th>
+                  <th>Project</th>
+                  <th>Cost Code</th>
+                  <th>Title</th>
+                  <th>Requester</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Labor (hrs)</th>
+                  <th style={{ textAlign: "right" }}>Material ($)</th>
+                  <th style={{ textAlign: "right" }}>Equip. ($)</th>
+                  <th style={{ textAlign: "right" }}>Sub ($)</th>
+                  <th style={{ textAlign: "right" }}>Est. Value ($)</th>
+                  <th style={{ textAlign: "right" }}>Final ($)</th>
+                  <th>Submitted</th>
+                  <th>ERP Sync</th>
+                  <th>Action</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {changeOrders.map((co, idx) => {
+                  const proj = projects.find((p) => p.id === co.projectId);
+                  const bd = co.currentRecommendationId ? null : null;
+                  void bd;
+                  return (
+                    <tr key={co.id}>
+                      <td style={{ color: "var(--text-muted)" }}>{idx + 1}</td>
+                      <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                        <Link href={`/change-orders/${co.id}`} style={{ color: "var(--blue)", textDecoration: "underline" }}>
+                          {co.changeOrderNumber}
+                        </Link>
+                      </td>
+                      <td style={{ color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{proj?.projectNumber ?? "—"}</td>
+                      <td className={!co.costCode ? "warn-cell" : ""} style={{ fontSize: 11 }}>
+                        {co.costCode ?? "MISSING"}
+                      </td>
+                      <td style={{ maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{co.title}</td>
+                      <td>{co.requester ?? "—"}</td>
+                      <td><StatusBadge status={co.status} /></td>
+                      <td style={{ textAlign: "right" }}>—</td>
+                      <td style={{ textAlign: "right" }}>—</td>
+                      <td style={{ textAlign: "right" }}>—</td>
+                      <td style={{ textAlign: "right" }}>—</td>
+                      <td
+                        style={{ textAlign: "right", fontWeight: 600 }}
+                        className={co.recommendedTotal === 0 ? "warn-cell" : ""}
+                      >
+                        {co.recommendedTotal > 0 ? co.recommendedTotal.toFixed(2) : "NOT PRICED"}
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        {co.finalTotal > 0 ? co.finalTotal.toFixed(2) : "—"}
+                      </td>
+                      <td style={{ color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        {co.dateSubmitted ? new Date(co.dateSubmitted).toLocaleDateString() : "—"}
+                      </td>
+                      <td
+                        style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}
+                        className={co.status === "Approved" ? "warn-cell" : ""}
+                      >
+                        {co.status === "Approved" ? "PENDING" : "—"}
+                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        <Link href={`/change-orders/${co.id}/pricing`} style={{ fontSize: 11, color: "var(--blue)", textDecoration: "underline" }}>
+                          Price
+                        </Link>
+                        {" | "}
+                        <Link href={`/change-orders/${co.id}/approval`} style={{ fontSize: 11, color: "var(--blue)", textDecoration: "underline" }}>
+                          Approve
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      {/* Status bar */}
-      <div className="shrink-0 border-t border-[#8a9aaa] bg-[#c8d4de] px-2 py-0.5 flex items-center gap-4">
-        <span className="text-[10px] text-[#2a3a4a]">Total records: {changeOrders.length}</span>
-        <span className="text-[10px] text-[#2a3a4a]">
-          Approved: {changeOrders.filter(c => c.status === "Approved").length}
-        </span>
-        <span className="text-[10px] text-[#2a3a4a]">
-          Total approved value: ${changeOrders.filter(c => c.status === "Approved").reduce((s, c) => s + c.finalTotal, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-        </span>
+      <div className="status-bar">
+        <span>{changeOrders.length} total records</span>
+        <span>{drafts} Draft</span>
+        <span>{unpricedCount} Unpriced</span>
+        <span style={{ color: "var(--warning-text)", fontWeight: 600 }}>ERP Sync: PENDING</span>
       </div>
     </div>
   );

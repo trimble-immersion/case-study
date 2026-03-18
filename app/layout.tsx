@@ -3,8 +3,8 @@ import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "Change Order Pricing | AI-Assisted Construction",
-  description: "AI-assisted pricing for construction change orders – enterprise workflow",
+  title: "CO Pricing | Trimble Construction Suite",
+  description: "Change Order Pricing Module – Trimble Construction Suite",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="antialiased" style={{ background: "#dde2e8" }}>
+      <body>
         <AppShell>{children}</AppShell>
       </body>
     </html>

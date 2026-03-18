@@ -1,346 +1,259 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface Project {
-  id: string;
-  projectNumber: string;
-  name: string;
-}
+const COST_CATEGORIES = [
+  { key: "labor",         label: "Labor",          unit: "hrs",  rate: 95 },
+  { key: "material",      label: "Material",       unit: "LS",   rate: 0  },
+  { key: "equipment",     label: "Equipment",      unit: "days", rate: 850 },
+  { key: "subcontractor", label: "Subcontractor",  unit: "LS",   rate: 0  },
+];
 
 export default function IntakePage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectId, setProjectId] = useState("");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [requester, setRequester] = useState("");
-  const [laborHours, setLaborHours] = useState("");
-  const [materialTotal, setMaterialTotal] = useState("");
-  const [equipmentTotal, setEquipmentTotal] = useState("");
-  const [subcontractorTotal, setSubcontractorTotal] = useState("");
-  const [costCode, setCostCode] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetch("/api/projects")
-      .then((r) => r.json())
-      .then((data: Project[]) => {
-        setProjects(data);
-        if (data.length > 0 && !projectId) setProjectId(data[0].id);
-      })
-      .catch(() => setProjects([]));
-  }, []);
+  const [form, setForm] = useState({
+    title: "",
+    projectId: "proj-001",
+    costCode: "",
+    requester: "",
+    changeType: "Change Order",
+    priority: "Normal",
+    description: "",
+  });
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  const [costRows, setCostRows] = useState(
+    COST_CATEGORIES.map((c) => ({ ...c, quantity: "", rate: String(c.rate), override: false }))
+  );
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    const labor = parseFloat(laborHours);
-    const material = parseFloat(materialTotal);
-    const equipment = parseFloat(equipmentTotal);
-    const sub = parseFloat(subcontractorTotal) || 0;
-    if (
-      !projectId || !title.trim() || !description.trim() ||
-      isNaN(labor) || labor < 0 ||
-      isNaN(material) || material < 0 ||
-      isNaN(equipment) || equipment < 0
-    ) {
-      setError("ERR-401: Required fields incomplete or invalid. Check highlighted fields.");
-      return;
-    }
-    setSubmitting(true);
+  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const calcExtended = (qty: string, rate: string) => {
+    const q = parseFloat(qty);
+    const r = parseFloat(rate);
+    if (isNaN(q) || isNaN(r)) return null;
+    return q * r;
+  };
+
+  const totalEst = costRows.reduce((s, r) => {
+    const ext = calcExtended(r.quantity, r.rate);
+    return s + (ext ?? 0);
+  }, 0);
+
+  const handleSubmit = async () => {
+    const errs: string[] = [];
+    if (!form.title.trim()) errs.push("Title is required.");
+    if (!form.requester.trim()) errs.push("Requester / Submitted By is required.");
+    if (errs.length > 0) { setErrors(errs); return; }
+    setErrors([]);
+    setSaving(true);
     try {
       const res = await fetch("/api/change-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId,
-          title: title.trim(),
-          description: description.trim(),
-          requester: requester.trim() || undefined,
-          laborHours: labor,
-          materialTotal: material,
-          equipmentTotal: equipment,
-          subcontractorTotal: sub || undefined,
-          costCode: costCode.trim() || undefined,
+          ...form,
+          estimatedValue: totalEst,
+          scopeItems: [],
         }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { error?: string }).error ?? "Create failed");
-      }
-      const co = await res.json();
-      router.push(`/change-orders/${co.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unhandled error – contact system admin");
-    } finally {
-      setSubmitting(false);
+      const data = await res.json();
+      router.push(`/change-orders/${data.id}`);
+    } catch {
+      setErrors(["Failed to create record. Server error."]);
+      setSaving(false);
     }
-  }
+  };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Page toolbar */}
-      <div className="shrink-0 border-b border-[#8a9aaa] bg-[#e4eaf0] px-2 flex items-center gap-1" style={{ height: 26 }}>
-        <span className="text-[11px] font-semibold text-[#1a2a3a] mr-2">CHANGE ORDER — NEW RECORD ENTRY</span>
-        <span className="text-[#9aa8b6] mx-1">|</span>
-        <button type="button" onClick={handleSave} className="btn-toolbar">
-          {saved ? "✓ Saved" : "Save Draft"}
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* Toolbar */}
+      <div className="toolbar-strip">
+        <span className="toolbar-label">INTAKE — New Change Order Record</span>
+        <span className="toolbar-sep">|</span>
+        <button className="btn-primary" onClick={handleSubmit} disabled={saving}>
+          {saving ? "Creating..." : "Create Record"}
         </button>
-        <button type="button" className="btn-toolbar">Reset</button>
-        <button type="button" className="btn-toolbar">Import from Estimating</button>
-        <span className="text-[#9aa8b6] mx-1">|</span>
-        <span className="text-[10px] text-[#cc4400]">⚠ Unsaved changes</span>
+        <button className="btn-secondary" onClick={() => router.push("/change-orders")}>Cancel</button>
+        <button className="btn-toolbar">Save Draft</button>
+        <button className="btn-toolbar">Reset Form</button>
+        <button className="btn-toolbar">Import from Estimating</button>
+        <span className="toolbar-sep">|</span>
+        <span style={{ fontSize: 10, color: "var(--warning-text)", fontWeight: 600 }}>
+          ⚠ Unsaved changes · Estimating MEP: offline
+        </span>
       </div>
 
-      <div className="flex-1 overflow-auto p-2">
-        <form onSubmit={handleSubmit}>
-          {/* Header info row */}
-          <div className="panel mb-2">
-            <div className="panel-header">RECORD HEADER — Change Order Identification</div>
-            <div className="panel-body">
-              <div className="grid gap-x-4 gap-y-1" style={{ gridTemplateColumns: "repeat(5, 1fr)" }}>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Linked Project *</label>
-                  <select
-                    value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
-                    className="w-full"
-                    required
-                  >
-                    <option value="">— select —</option>
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.projectNumber} – {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Cost Code *</label>
-                  <input
-                    type="text"
-                    value={costCode}
-                    onChange={(e) => setCostCode(e.target.value)}
-                    placeholder="e.g. 26-0500"
-                    className="w-full"
-                  />
-                  {!costCode && (
-                    <span className="text-[9px] text-[#cc4400]">⚠ Missing cost code</span>
+      <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
+        {errors.length > 0 && (
+          <div className="notice-error">
+            <strong>Validation errors: </strong>
+            {errors.join(" ")}
+          </div>
+        )}
+
+        {/* Record header */}
+        <div className="panel">
+          <div className="panel-header">RECORD HEADER — Change Order Identification</div>
+          <div className="panel-body">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px 16px" }}>
+              {[
+                { label: "Project ID / Number", key: "projectId", type: "text", placeholder: "e.g. PROJ-001" },
+                { label: "Cost Code", key: "costCode", type: "text", placeholder: "e.g. 03.200.100" },
+                { label: "Requester / Submitted By", key: "requester", type: "text", placeholder: "Name or ID" },
+                { label: "Record Type", key: "changeType", type: "select", options: ["Change Order", "Variation", "Claim", "PCO", "RFQ"] },
+                { label: "Priority", key: "priority", type: "select", options: ["Low", "Normal", "High", "Critical"] },
+              ].map((f) => (
+                <div key={f.key}>
+                  <div className="field-label" style={{ marginBottom: 2 }}>{f.label}</div>
+                  {f.type === "select" ? (
+                    <select
+                      value={(form as Record<string, string>)[f.key]}
+                      onChange={(e) => set(f.key, e.target.value)}
+                      style={{ width: "100%" }}
+                    >
+                      {f.options!.map((o) => <option key={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={(form as Record<string, string>)[f.key]}
+                      onChange={(e) => set(f.key, e.target.value)}
+                      placeholder={f.placeholder}
+                      style={{ width: "100%" }}
+                    />
                   )}
                 </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Requested By</label>
-                  <input
-                    type="text"
-                    value={requester}
-                    onChange={(e) => setRequester(e.target.value)}
-                    placeholder="Last, First"
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Record Type</label>
-                  <select className="w-full">
-                    <option>Owner-Initiated</option>
-                    <option>Field Change</option>
-                    <option>Design Change</option>
-                    <option>Unforeseen Condition</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Priority</label>
-                  <select className="w-full">
-                    <option>Normal</option>
-                    <option>Urgent</option>
-                    <option>Low</option>
-                  </select>
-                </div>
-              </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <div className="field-label" style={{ marginBottom: 2 }}>Record Title / Short Description</div>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => set("title", e.target.value)}
+                placeholder="Enter change order title"
+                style={{ width: "100%" }}
+              />
             </div>
           </div>
+        </div>
 
-          {/* Scope section */}
-          <div className="panel mb-2">
-            <div className="panel-header">SCOPE — Description and Work Summary</div>
-            <div className="panel-body">
-              <div className="grid gap-x-4 gap-y-1" style={{ gridTemplateColumns: "1fr 2fr" }}>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Title / Short Description *</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] text-[#4a5a6a] uppercase mb-0.5">Scope Narrative *</label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={2}
-                    className="w-full"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
+        {/* Scope narrative */}
+        <div className="panel">
+          <div className="panel-header">SCOPE NARRATIVE — Description of Work</div>
+          <div className="panel-body">
+            <textarea
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Describe the scope of work. Reference RFI, drawing numbers, or spec sections where applicable."
+              style={{ width: "100%", minHeight: 64, resize: "vertical" }}
+            />
           </div>
+        </div>
 
-          {/* Cost inputs */}
-          <div className="panel mb-2">
-            <div className="panel-header flex items-center justify-between">
-              <span>COST INPUTS — Manual Entry Required</span>
-              <span className="text-[10px] text-[#cc4400] normal-case tracking-normal font-normal">
-                ⚠ Values not yet verified against Estimation MEP
-              </span>
-            </div>
-            <div className="panel-body">
-              <table style={{ marginBottom: 8 }}>
-                <thead>
-                  <tr>
-                    <th>Cost Category</th>
-                    <th>Unit</th>
-                    <th>Quantity / Amount</th>
-                    <th>Rate / Unit Cost ($)</th>
-                    <th>Extended ($)</th>
-                    <th>Source</th>
-                    <th>Override</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="font-medium">Labor</td>
-                    <td>HR</td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        value={laborHours}
-                        onChange={(e) => setLaborHours(e.target.value)}
-                        className="w-20"
-                        required
-                        placeholder="0"
-                      />
-                    </td>
-                    <td className="text-[#6a7e90]">$85.00 (rate table)</td>
-                    <td className="font-medium">
-                      {laborHours ? `$${(parseFloat(laborHours) * 85).toFixed(2)}` : "—"}
-                    </td>
-                    <td className="text-[#6a7e90]">Contract rate table</td>
-                    <td className="text-[#6a7e90]">—</td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">Material</td>
-                    <td>LS</td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={materialTotal}
-                        onChange={(e) => setMaterialTotal(e.target.value)}
-                        className="w-24"
-                        required
-                        placeholder="0.00"
-                      />
-                    </td>
-                    <td className="text-[#6a7e90]">—</td>
-                    <td className="font-medium">
-                      {materialTotal ? `$${parseFloat(materialTotal).toFixed(2)}` : "—"}
-                    </td>
-                    <td className="warn-cell">Manual entry</td>
-                    <td className="warn-cell font-semibold">YES</td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">Equipment</td>
-                    <td>LS</td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={equipmentTotal}
-                        onChange={(e) => setEquipmentTotal(e.target.value)}
-                        className="w-24"
-                        required
-                        placeholder="0.00"
-                      />
-                    </td>
-                    <td className="text-[#6a7e90]">+15% markup applied</td>
-                    <td className="font-medium">
-                      {equipmentTotal ? `$${(parseFloat(equipmentTotal) * 1.15).toFixed(2)}` : "—"}
-                    </td>
-                    <td className="warn-cell">Manual entry</td>
-                    <td className="warn-cell font-semibold">YES</td>
-                  </tr>
-                  <tr>
-                    <td className="font-medium">Subcontractor</td>
-                    <td>LS</td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={subcontractorTotal}
-                        onChange={(e) => setSubcontractorTotal(e.target.value)}
-                        className="w-24"
-                        placeholder="0.00"
-                      />
-                    </td>
-                    <td className="text-[#6a7e90]">—</td>
-                    <td className="font-medium">
-                      {subcontractorTotal && parseFloat(subcontractorTotal) > 0
-                        ? `$${parseFloat(subcontractorTotal).toFixed(2)}`
-                        : <span className="text-[#6a7e90]">$0.00</span>}
-                    </td>
-                    <td className="text-[#6a7e90]">—</td>
-                    <td className="text-[#6a7e90]">—</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="text-[10px] text-[#6a7e90]">
-                * Pricing estimate will be generated separately on the Pricing tab after record is created.
-                Material and equipment values require manual verification.
-              </div>
-            </div>
-          </div>
-
-          {/* Error */}
-          {error && (
-            <div className="mb-2 border border-[#c04040] bg-[#ffe0e0] px-2 py-1 text-[11px] text-[#900000]">
-              {error}
-            </div>
-          )}
-
-          {/* Action bar */}
-          <div className="flex items-center gap-2 border border-[#8a9aaa] bg-[#e4eaf0] px-2 py-1.5">
-            <button
-              type="submit"
-              disabled={submitting}
-              className="btn-primary"
-            >
-              {submitting ? "Creating record…" : "Create Change Order Record"}
-            </button>
-            <button type="button" className="btn-secondary" onClick={() => router.back()}>
-              Cancel
-            </button>
-            <span className="text-[10px] text-[#6a7e90] ml-2">
-              Note: Pricing estimate not auto-generated. Use &quot;Generate Pricing&quot; on Pricing tab after creation.
+        {/* Cost inputs */}
+        <div className="panel">
+          <div className="panel-header">
+            COST INPUTS — Manual Entry Required
+            <span style={{ fontSize: 10, color: "var(--warning-text)", fontWeight: 400, textTransform: "none", letterSpacing: "normal" }}>
+              ⚠ Values not verified against Estimation MEP (offline)
             </span>
           </div>
-        </form>
+          <div style={{ padding: 0 }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Cost Category</th>
+                  <th>Unit</th>
+                  <th style={{ textAlign: "right" }}>Quantity</th>
+                  <th style={{ textAlign: "right" }}>Rate ($)</th>
+                  <th style={{ textAlign: "right" }}>Extended ($)</th>
+                  <th>Source</th>
+                  <th>Override</th>
+                </tr>
+              </thead>
+              <tbody>
+                {costRows.map((r, i) => {
+                  const ext = calcExtended(r.quantity, r.rate);
+                  return (
+                    <tr key={r.key}>
+                      <td style={{ fontWeight: 500 }}>{r.label}</td>
+                      <td style={{ color: "var(--text-secondary)" }}>{r.unit}</td>
+                      <td style={{ textAlign: "right" }}>
+                        <input
+                          type="number"
+                          value={r.quantity}
+                          onChange={(e) => setCostRows((rows) => rows.map((row, j) => j === i ? { ...row, quantity: e.target.value } : row))}
+                          placeholder="0"
+                          style={{ width: 70, textAlign: "right" }}
+                        />
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <input
+                          type="number"
+                          value={r.rate}
+                          onChange={(e) => setCostRows((rows) => rows.map((row, j) => j === i ? { ...row, rate: e.target.value, override: true } : row))}
+                          style={{ width: 80, textAlign: "right" }}
+                        />
+                      </td>
+                      <td
+                        style={{ textAlign: "right", fontWeight: ext != null ? 600 : 400, fontFamily: "monospace" }}
+                        className={ext == null ? "warn-cell" : ""}
+                      >
+                        {ext != null ? ext.toFixed(2) : "ENTER QTY"}
+                      </td>
+                      <td className="warn-cell" style={{ fontSize: 11 }}>Manual entry</td>
+                      <td>
+                        {r.override ? (
+                          <span className="warn-cell" style={{ fontWeight: 700, fontSize: 10 }}>YES</span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: 10 }}>—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: "var(--nav-bg)" }}>
+                  <td colSpan={4} style={{ fontWeight: 700, textAlign: "right", color: "white", border: "1px solid var(--nav-border)", fontSize: 11, letterSpacing: "0.03em" }}>
+                    TOTAL ESTIMATED VALUE
+                  </td>
+                  <td style={{ textAlign: "right", fontWeight: 700, color: "white", fontFamily: "monospace", fontSize: 13, border: "1px solid var(--nav-border)" }}>
+                    {totalEst > 0 ? totalEst.toFixed(2) : "—"}
+                  </td>
+                  <td colSpan={2} style={{ border: "1px solid var(--nav-border)" }} />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        {/* Action bar */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 0" }}>
+          <button className="btn-primary" onClick={handleSubmit} disabled={saving}>
+            {saving ? "Creating Record..." : "Create Change Order Record"}
+          </button>
+          <button className="btn-secondary" onClick={() => router.push("/change-orders")}>Cancel</button>
+          <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Record will be created in DRAFT status.</span>
+        </div>
+      </div>
+
+      <div className="status-bar">
+        <span>Intake Form</span>
+        <span className={form.title ? "success-cell" : "warn-cell"} style={{ fontSize: 10, fontWeight: 600 }}>
+          {form.title ? "Title: OK" : "Title: MISSING"}
+        </span>
+        <span className={form.requester ? "success-cell" : "warn-cell"} style={{ fontSize: 10, fontWeight: 600 }}>
+          {form.requester ? "Requester: OK" : "Requester: MISSING"}
+        </span>
+        <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)" }}>
+          Est. Total: {totalEst > 0 ? `$${totalEst.toFixed(2)}` : "Not entered"}
+        </span>
       </div>
     </div>
   );
