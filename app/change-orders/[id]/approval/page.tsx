@@ -11,7 +11,7 @@ export default function ApprovalPage({ params }: { params: { id: string } }) {
   const co = ChangeOrderService.getChangeOrderById(params.id);
   if (!co) return notFound();
   const project = ProjectService.getProjectById(co.projectId) ?? null;
-  const history = AuditService.getAuditRecords(params.id);
+  const history = AuditService.getAuditTrail(params.id);
   const approvalHistory = history.filter((e) => e.eventType.toLowerCase().includes("approv") || e.eventType.toLowerCase().includes("reject"));
 
   return (

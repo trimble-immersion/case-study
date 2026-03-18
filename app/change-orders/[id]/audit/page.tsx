@@ -9,7 +9,7 @@ export default function AuditPage({ params }: { params: { id: string } }) {
   const co = ChangeOrderService.getChangeOrderById(params.id);
   if (!co) return notFound();
   const project = ProjectService.getProjectById(co.projectId) ?? null;
-  const records = AuditService.getAuditRecords(params.id);
+  const records = AuditService.getAuditTrail(params.id);
 
   return (
     <ChangeOrderDetailLayout changeOrder={co} project={project}>
